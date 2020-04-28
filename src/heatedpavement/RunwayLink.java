@@ -11,9 +11,9 @@ package heatedpavement;
  */
 public class RunwayLink extends Link
 {
-    public RunwayLink(Runway runway, Node source, Node dest, double area)
+    public RunwayLink(String name, Node source, Node dest, double area)
     {
-        super(runway.getName(), source, dest, area);
+        super(name, source, dest, area);
     }
     
     public Type getType()

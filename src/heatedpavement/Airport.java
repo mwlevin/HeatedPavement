@@ -12,9 +12,13 @@ import ilog.concert.IloNumExpr;
 import ilog.concert.IloNumVar;
 import ilog.cplex.IloCplex;
 import ilog.cplex.IloCplexModeler;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 /**
  *
@@ -37,12 +41,230 @@ public class Airport
     
     private List<AirportComponent> components;
     
-    private Map<Character, Integer> departures, arrivals;
+    private Map<Character, Double> departures, arrivals;
     
     
+    private Map<String, Node> lookupNode;
+    private Map<String, Link> lookupLink;
+    private List<String> runwayNodes, runwayLinks;
+    
+    public Airport(String airportName) throws IOException
+    {
+        runways = new ArrayList<>();
+        nodes = new ArrayList<>();
+        taxiways = new ArrayList<>();
+        gates = new ArrayList<>();
+        components = new ArrayList<>();
+        departures = new HashMap<>();
+        arrivals = new HashMap<>();
+        
+        
+        
+        lookupNode = new HashMap<>();
+        lookupLink = new HashMap<>();
+        
+        String directory = "airports/"+airportName+"/";
+        
+        runwayNodes = new ArrayList<>();
+        runwayLinks = new ArrayList<>();
+        
+        Scanner filein = new Scanner(new File(directory+"runways.txt"));
+        filein.nextLine();
+        
+        while(filein.hasNext())
+        {
+            filein.next();
+            String line = filein.nextLine().trim();
+            
+            String temp = line.substring(1, line.indexOf('}'));
+            line = line.substring(line.indexOf('}')+1).trim();
+            Scanner chopper = new Scanner(temp);
+            
+            while(chopper.hasNext())
+            {
+                runwayLinks.add(chopper.next());
+            }
+            
+            temp = line.substring(1, line.indexOf('}'));
+            line = line.substring(line.indexOf('}')+1).trim();
+            
+            chopper = new Scanner(temp);
+            
+            while(chopper.hasNext())
+            {
+                runwayNodes.add(chopper.next());
+            }
+            
+            temp = line.substring(1, line.indexOf('}'));
+            
+            chopper = new Scanner(temp);
+            
+            while(chopper.hasNext())
+            {
+                runwayNodes.add(chopper.next());
+            }
+            
+            
+        }
+        filein.close();
+        
+        filein = new Scanner(new File(directory+"gates.txt"));
+        filein.nextLine();
+        
+        while(filein.hasNext())
+        {
+            gates.add(new Gate(filein.next(), findNode(filein.next()), filein.nextDouble(), filein.next().charAt(0)));
+        }
+        filein.close();
+        
+        filein = new Scanner(new File(directory+"links.txt"));
+        filein.nextLine();
+        
+        while(filein.hasNext())
+        {
+            String name = filein.next();
+            String source = filein.next();
+            String dest = filein.next();
+            double area = filein.nextDouble();
+            
+            Link link;
+            
+            if(runwayLinks.contains(name))
+            {
+                link = new RunwayLink(name, findNode(source), findNode(dest), area);
+            }
+            else
+            {
+                link = new Taxiway(name, findNode(source), findNode(dest), area);
+                taxiways.add((Taxiway)link);
+            }
+            
+            lookupLink.put(name, link);
+        }
+        filein.close();
+        
+        filein = new Scanner(new File(directory+"runways.txt"));
+        filein.nextLine();
+        
+        while(filein.hasNext())
+        {
+            String name = filein.next();
+            String line = filein.nextLine().trim();
+            
+            String temp = line.substring(1, line.indexOf('}'));
+            line = line.substring(line.indexOf('}')+1).trim();
+            Scanner chopper = new Scanner(temp);
+            
+            List<RunwayLink> links = new ArrayList<>();
+            List<RunwayNode> entering = new ArrayList<>();
+            List<RunwayNode> exiting = new ArrayList<>();
+            
+            while(chopper.hasNext())
+            {
+                links.add((RunwayLink)lookupLink.get(chopper.next()));
+            }
+            
+            temp = line.substring(1, line.indexOf('}'));
+            line = line.substring(line.indexOf('}')+1).trim();
+            
+            chopper = new Scanner(temp);
+            
+            while(chopper.hasNext())
+            {
+                entering.add((RunwayNode)lookupNode.get(chopper.next()));
+            }
+            
+            temp = line.substring(1, line.indexOf('}'));
+            
+            chopper = new Scanner(temp);
+            
+            while(chopper.hasNext())
+            {
+                exiting.add((RunwayNode)lookupNode.get(chopper.next()));
+            }
+            
+            runways.add(new Runway(name, links, entering, exiting));
+            
+        }
+        filein.close();
+        
+        
+        filein = new Scanner(new File(directory+"/arrivals.txt"));
+        filein.nextLine();
+        
+        while(filein.hasNext())
+        {
+            arrivals.put(filein.next().charAt(0), filein.nextDouble());
+        }
+        filein.close();
+        
+        filein = new Scanner(new File(directory+"/departures.txt"));
+        filein.nextLine();
+        
+        while(filein.hasNext())
+        {
+            departures.put(filein.next().charAt(0), filein.nextDouble());
+        }
+        filein.close();
+        
+        
+        components = new ArrayList<>();
+        
+        for(Taxiway t : taxiways)
+        {
+            if(!(t instanceof Gate))
+            {
+                components.add(t);
+            }
+        }
+        
+        for(Gate g : gates)
+        {
+            components.add(g);
+        }
+        
+        for(TaxiwayNode n : nodes)
+        {
+            components.add(n);
+        }
+        
+        for(Runway r : runways)
+        {
+            components.add(r);
+        }
+        
+        
+        
+        
+        runwayNodes = null;
+        runwayLinks = null;
+    }
+    
+    private Node findNode(String name)
+    {
+        if(!lookupNode.containsKey(name))
+        {
+            Node node;
+            if(runwayNodes.contains(name))
+            {
+                node = new RunwayNode(name);
+            }
+            else
+            {
+                node = new TaxiwayNode(name);
+            }
+            
+            lookupNode.put(name, node);
+            return node;
+        }
+        else
+        {
+            return lookupNode.get(name);
+        }
+    }
     
     public Airport(List<Runway> runways, List<TaxiwayNode> nodes, List<Taxiway> taxiways, List<Gate> gates, 
-            Map<Character, Integer> departures, Map<Character, Integer> arrivals)
+            Map<Character, Double> departures, Map<Character, Double> arrivals)
     {
         this.runways = runways;
         this.nodes = nodes;

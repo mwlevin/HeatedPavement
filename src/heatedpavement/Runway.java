@@ -38,6 +38,7 @@ public class Runway extends AirportComponent
         this.exiting = exiting;
     }
     
+    
     public void createVariables(IloCplex cplex) throws IloException
     {
         x = cplex.intVar(0, 1);
