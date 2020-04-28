@@ -23,9 +23,9 @@ public class Taxiway extends Link
         super(name, source, dest, area);
     }
     
-    public void createCplex(IloCplex cplex) throws IloException
+    public void addConstraints(IloCplex cplex) throws IloException
     {
-        super.createCplex(cplex);
+        super.addConstraints(cplex);
         
         flow_ij = cplex.numVar(0, 100000);
         flow_ji = cplex.numVar(0, 100000);

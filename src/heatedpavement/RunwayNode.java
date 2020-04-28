@@ -18,9 +18,5 @@ public class RunwayNode extends Node
     {
         super(name);
     }
-    
-    public void createCplex(IloCplex cplex) throws IloException
-    {
-        // nothing to do here
-    }
+
 }

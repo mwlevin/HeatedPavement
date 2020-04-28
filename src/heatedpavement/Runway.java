@@ -38,11 +38,49 @@ public class Runway extends AirportComponent
         this.exiting = exiting;
     }
     
-    public void createCplex(IloCplex cplex) throws IloException
+    public void createVariables(IloCplex cplex) throws IloException
     {
         x = cplex.intVar(0, 1);
         departing_flow = cplex.numVar(0, 100000);
         arriving_flow = cplex.numVar(0, 100000);
+        
+        for(Link l : links)
+        {
+            l.createVariables(cplex);
+        }
+        
+        for(Node n : entering)
+        {
+            n.createVariables(cplex);
+        }
+        
+        for(Node n : exiting)
+        {
+            n.createVariables(cplex);
+        }
+    }
+    
+    public void addConstraints(IloCplex cplex) throws IloException
+    {
+        for(Link l : links)
+        {
+            l.addConstraints(cplex);
+        }
+        
+        for(Node n : entering)
+        {
+            n.addConstraints(cplex);
+        }
+        
+        for(Node n : exiting)
+        {
+            n.addConstraints(cplex);
+        }
+        
+        
+        
+        
+        
         
         IloLinearNumExpr rhs = cplex.linearNumExpr();
         
@@ -126,5 +164,10 @@ public class Runway extends AirportComponent
     public Type getType()
     {
         return Type.runway;
+    }
+    
+    public List<RunwayLink> getLinks()
+    {
+        return links;
     }
 }

@@ -26,7 +26,7 @@ public abstract class Node extends AirportComponent
         outgoing = new ArrayList<>();
     }
     
-    public abstract void createCplex(IloCplex cplex) throws IloException;
+    
     
     public List<Link> getIncoming()
     {

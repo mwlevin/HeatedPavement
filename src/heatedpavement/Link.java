@@ -34,6 +34,15 @@ public abstract class Link extends AirportComponent
         this.source = source;
         this.dest = dest;
         this.area = area;
+        
+        if(source != null)
+        {
+            source.addLink(this);
+        }
+        if(dest != null)
+        {
+            dest.addLink(this);
+        }
     }
    
     
@@ -42,17 +51,36 @@ public abstract class Link extends AirportComponent
         return area;
     }
     
-    public void createCplex(IloCplex cplex) throws IloException
+    public void createVariables(IloCplex cplex) throws IloException
     {
         x = cplex.intVar(0, 1);
         x_1 = cplex.intVar(0, 1);
         x_2 = cplex.intVar(0, 1);
         x_3 = cplex.intVar(0, 1);
         
+        
+        if(!Airport.enable_x1)
+        {
+            cplex.addEq(x_1, 0);
+        }
+        
+        if(!Airport.enable_x2)
+        {
+            cplex.addEq(x_2, 0);
+        }
+        
+        if(!Airport.enable_x3)
+        {
+            cplex.addEq(x_3, 0);
+        }
+        
         cplex.addLe(x, cplex.sum(x_1, cplex.sum(x_2, x_3)));
         
-        
-        
+    }
+    
+    public void addConstraints(IloCplex cplex) throws IloException
+    {
+        // nothing to do here
     }
     
     

@@ -20,8 +20,11 @@ public class TaxiwayNode extends Node
         super(name);
     }
     
-    public void createCplex(IloCplex cplex) throws IloException
+    public void addConstraints(IloCplex cplex) throws IloException
     {
+        super.addConstraints(cplex);
+        
+        
         // conservation of flow
         IloLinearNumExpr lhs = cplex.linearNumExpr();
         
