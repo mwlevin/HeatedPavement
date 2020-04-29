@@ -16,9 +16,10 @@ public class Main {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) throws IOException
+    public static void main(String[] args) throws Exception
     {
         Airport test = new Airport("KEYW_09");
+        test.solveCplex();
     }
     
 }

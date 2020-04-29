@@ -35,7 +35,7 @@ public class Airport
     // define the runways in 1 direction only please
     
     private List<Runway> runways;
-    private List<TaxiwayNode> nodes; 
+    private List<Node> nodes; 
     private List<Taxiway> taxiways;
     private List<Gate> gates;
     
@@ -156,8 +156,8 @@ public class Airport
             Scanner chopper = new Scanner(temp);
             
             List<RunwayLink> links = new ArrayList<>();
-            List<RunwayNode> entering = new ArrayList<>();
-            List<RunwayNode> exiting = new ArrayList<>();
+            List<Node> entering = new ArrayList<>();
+            List<Node> exiting = new ArrayList<>();
             
             while(chopper.hasNext())
             {
@@ -171,7 +171,7 @@ public class Airport
             
             while(chopper.hasNext())
             {
-                entering.add((RunwayNode)lookupNode.get(chopper.next()));
+                entering.add(lookupNode.get(chopper.next()));
             }
             
             temp = line.substring(1, line.indexOf('}'));
@@ -180,7 +180,7 @@ public class Airport
             
             while(chopper.hasNext())
             {
-                exiting.add((RunwayNode)lookupNode.get(chopper.next()));
+                exiting.add(lookupNode.get(chopper.next()));
             }
             
             runways.add(new Runway(name, links, entering, exiting));
@@ -223,7 +223,7 @@ public class Airport
             components.add(g);
         }
         
-        for(TaxiwayNode n : nodes)
+        for(Node n : nodes)
         {
             components.add(n);
         }
@@ -244,14 +244,10 @@ public class Airport
     {
         if(!lookupNode.containsKey(name))
         {
-            Node node;
-            if(runwayNodes.contains(name))
+            Node node = new Node(name);
+            if(!runwayNodes.contains(name))
             {
-                node = new RunwayNode(name);
-            }
-            else
-            {
-                node = new TaxiwayNode(name);
+                nodes.add(node);
             }
             
             lookupNode.put(name, node);
@@ -263,7 +259,7 @@ public class Airport
         }
     }
     
-    public Airport(List<Runway> runways, List<TaxiwayNode> nodes, List<Taxiway> taxiways, List<Gate> gates, 
+    public Airport(List<Runway> runways, List<Node> nodes, List<Taxiway> taxiways, List<Gate> gates, 
             Map<Character, Double> departures, Map<Character, Double> arrivals)
     {
         this.runways = runways;
@@ -286,7 +282,7 @@ public class Airport
             components.add(g);
         }
         
-        for(TaxiwayNode n : nodes)
+        for(Node n : nodes)
         {
             components.add(n);
         }
@@ -357,7 +353,10 @@ public class Airport
             
             for(char i = s; i <= 'F'; i++)
             {
-                total_demand += departures.get(i);
+                if(departures.containsKey(i))
+                {
+                    total_demand += departures.get(i);
+                }
                 
                 for(Gate g : gates)
                 {
@@ -376,7 +375,10 @@ public class Airport
             
             for(char i = s; i <= 'F'; i++)
             {
-                total_demand += arrivals.get(i);
+                if(arrivals.containsKey(i))
+                {
+                    total_demand += arrivals.get(i);
+                }
                 
                 for(Gate g : gates)
                 {
@@ -543,7 +545,51 @@ public class Airport
         IloNumVar CG_Total = cplex.numVar(0, INFTY);
         cplex.addEq(CG_Total, cplex.sum(cplex.prod(LC, cplex.sum(CGP, CGD)), CGE));
         
-        cplex.addMinimize(cplex.sum(CR_Total, CG_Total));
+        
+        IloLinearNumExpr total_flow = cplex.linearNumExpr();
+        
+        for(Taxiway t : taxiways)
+        {
+            total_flow.addTerm(0.001, t.flow_ij);
+            total_flow.addTerm(0.001, t.flow_ji);
+        }
+        
+        cplex.addMinimize(cplex.sum(total_flow, cplex.sum(CR_Total, CG_Total)));
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        cplex.solve();
+        
+        
+        System.out.println("Gates\tx\tflow_in\tflow_out");
+        for(Gate g : gates)
+        {
+            System.out.println(g+"\t"+String.format("%.0f", cplex.getValue(g.x))
+                    +"\t"+String.format("%.1f", cplex.getValue(g.flow_ji))+"\t"+String.format("%.1f", cplex.getValue(g.flow_ij)));
+        }
+        
+        
+        System.out.println("\nTaxiways\tx\tflow_in\tflow_out");
+        for(Taxiway t : taxiways)
+        {
+            System.out.println(t+"\t"+String.format("%.0f", cplex.getValue(t.x))
+                    +"\t"+String.format("%.1f", cplex.getValue(t.flow_ij))+"\t"+String.format("%.1f", cplex.getValue(t.flow_ji)));
+        }
+        
+        System.out.println("\nRunways\tx\tdeparting\tarriving");
+        for(Runway r : runways)
+        {
+            System.out.println(r+"\t"+String.format("%.0f", cplex.getValue(r.x))
+                    +"\t"+String.format("%.1f", cplex.getValue(r.departing_flow))
+                    +"\t"+String.format("%.1f", cplex.getValue(r.arriving_flow)));
+        }
     }
 }

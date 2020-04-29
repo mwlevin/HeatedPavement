@@ -10,7 +10,9 @@ import ilog.concert.IloIntVar;
 import ilog.concert.IloLinearNumExpr;
 import ilog.concert.IloNumVar;
 import ilog.cplex.IloCplex;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -22,15 +24,15 @@ public class Runway extends AirportComponent
     
     private List<RunwayLink> links;
 
-    private List<RunwayNode> exiting; // where aircraft exit the runway
-    private List<RunwayNode> entering; // where aircraft enter the runway
+    private List<Node> exiting; // where aircraft exit the runway
+    private List<Node> entering; // where aircraft enter the runway
     
     
     protected IloIntVar x;
     
     protected IloNumVar departing_flow, arriving_flow;
     
-    public Runway(String name, List<RunwayLink> links, List<RunwayNode> entering, List<RunwayNode> exiting)
+    public Runway(String name, List<RunwayLink> links, List<Node> entering, List<Node> exiting)
     {
         super(name);
         this.links = links;
@@ -133,11 +135,19 @@ public class Runway extends AirportComponent
         
         
         // conservation of flow: exiting traffic = arriving traffic
-        rhs = cplex.linearNumExpr(); // difference between entering and exiting at each node
+        
+        
+        
+        Map<Node, IloNumVar> exitingFlow = new HashMap<>();
         
         
         for(Node n : exiting)
         {
+            IloNumVar exitAtN = cplex.numVar(0, 100000);
+            exitingFlow.put(n, exitAtN);
+            
+            rhs = cplex.linearNumExpr(); // difference between entering and exiting at each node
+            
             for(Link l : n.getIncoming())
             {
                 if(l instanceof Taxiway)
@@ -157,6 +167,15 @@ public class Runway extends AirportComponent
                     rhs.addTerm(-1, ji.flow_ji); // ji is incoming flow
                 }
             }
+            
+            cplex.addEq(exitAtN, rhs);
+        }
+        
+        rhs = cplex.linearNumExpr();
+        
+        for(Node n : exitingFlow.keySet())
+        {
+            rhs.addTerm(1, exitingFlow.get(n));
         }
         
         cplex.addEq(arriving_flow, rhs);
