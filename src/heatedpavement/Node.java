@@ -40,7 +40,7 @@ public class Node extends AirportComponent
             return;
         }
         
-        System.out.println(getName());
+        //System.out.println(getName());
         
         // conservation of flow
         IloLinearNumExpr lhs = cplex.linearNumExpr();

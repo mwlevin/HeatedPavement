@@ -1,0 +1,2 @@
+aircraft class	number
+B	2

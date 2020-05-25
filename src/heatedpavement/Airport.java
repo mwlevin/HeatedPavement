@@ -28,8 +28,8 @@ public class Airport
 {
     // enable x_1, x_2, x_3
     public static final boolean enable_x1 = false;
-    public static final boolean enable_x2 = true;
-    public static final boolean enable_x3 = false;
+    public static final boolean enable_x2 = false;
+    public static final boolean enable_x3 = true;
     
     
     // define the runways in 1 direction only please
@@ -443,13 +443,13 @@ public class Airport
         //calculate runway area
         for (Runway r : runways) {
             for(RunwayLink l : r.getLinks()) {
-                lhs.addTerm(l.getArea(), l.x_1);
+                AR1.addTerm(l.getArea(), l.x_1);
             }
         }
         //calculate taxiway area
         IloLinearNumExpr AT1 = cplex.linearNumExpr();
         for(Taxiway t : taxiways) {
-            lhs.addTerm(t.getArea(), t.x_1);
+            AT1.addTerm(t.getArea(), t.x_1);
         }
         //calculate gate area
         IloLinearNumExpr AG1 = cplex.linearNumExpr();
@@ -459,8 +459,8 @@ public class Airport
         
         //Runway pavement:
         //ER_Req1 = ceil((AR1/ATR)*ER + (AR1/A)*EB); --> required equipment for runway operations
-        IloNumVar ER_Req1 = cplex.numVar(0, INFTY);
-        cplex.addEq(ER_Req1, cplex.sum(cplex.prod(AR1, 1.0/ATR*ER), cplex.sum(AR1, 1.0/A*EB)));
+        IloIntVar ER_Req1 = cplex.intVar(0, (int) INFTY);
+        cplex.addGe(ER_Req1, cplex.sum(cplex.prod(AR1, 1.0/ATR*ER), cplex.sum(AR1, 1.0/A*EB)));
         //PR_Req1 = ceil((ER_Req1/E)*P); --> personnel required for runway operations
         IloNumVar PR_Req1 = cplex.numVar(0, INFTY);
         cplex.addEq(PR_Req1, cplex.prod(ER_Req1, P/E));
@@ -518,7 +518,7 @@ public class Airport
         {
             for(RunwayLink l : r.getLinks())
             {
-                lhs.addTerm(l.getArea(), l.x_3);
+                AR2.addTerm(l.getArea(), l.x_2);
             }
         }
         
@@ -526,14 +526,14 @@ public class Airport
         
         for(Taxiway t : taxiways)
         {
-            lhs.addTerm(t.getArea(), t.x_3);
+            AT2.addTerm(t.getArea(), t.x_2);
         }
         
         IloLinearNumExpr AG2 = cplex.linearNumExpr();
         
         for(Gate g : gates)
         {
-            AG2.addTerm(g.getArea(), g.x_3);
+            AG2.addTerm(g.getArea(), g.x_2);
         }
         
         //Runway area:
@@ -541,8 +541,8 @@ public class Airport
         // *** ? should the second term be AG/ATG * EG?
         
         // make this an IloIntVar, and make the constraint GE to convert to integer variable
-        IloNumVar ER_Req2 = cplex.numVar(0, INFTY);
-        cplex.addEq(ER_Req2, cplex.sum(cplex.prod(AR2, 1.0/ATR*ER), cplex.sum(AR2, 1.0/A*EB)));
+        IloIntVar ER_Req2 = cplex.intVar(0, (int) INFTY);
+        cplex.addGe(ER_Req2, cplex.sum(cplex.prod(AR2, 1.0/ATR*ER), cplex.sum(AR2, 1.0/A*EB)));
         
         
         // PR_Req2 = ceil((ER_Req2/E)*PR);                // personnel required for runway operations
@@ -618,18 +618,18 @@ public class Airport
         //calculate runway area
         for (Runway r : runways) {
             for(RunwayLink l : r.getLinks()) {
-                lhs.addTerm(l.getArea(), l.x_2);
+                AR3.addTerm(l.getArea(), l.x_3);
             }
         }
         //calculate taxiway area
         IloLinearNumExpr AT3 = cplex.linearNumExpr();
         for(Taxiway t : taxiways) {
-            lhs.addTerm(t.getArea(), t.x_2);
+            AT3.addTerm(t.getArea(), t.x_3);
         }
         //calculate gate area
         IloLinearNumExpr AG3 = cplex.linearNumExpr();
         for(Gate g : gates) {
-            AG3.addTerm(g.getArea(), g.x_2);
+            AG3.addTerm(g.getArea(), g.x_3);
         }
         //Model inputs
         double LC3 = 20;    //20 year life cycle
@@ -646,8 +646,8 @@ public class Airport
 
         //Runway pavement:
         //ER_Req3 = ceil(0.15*((AR3/ATR)*ER + (AR3/A)*EB)); --> required equipment for runway operations, keep 15% of current equipment in case
-        IloNumVar ER_Req3 = cplex.numVar(0, INFTY);
-        cplex.addEq(ER_Req3, cplex.prod(cplex.sum(cplex.prod(AR3, 1.0/ATR*ER), cplex.prod(AR3, 1.0/A*EB)), .15));
+        IloIntVar ER_Req3 = cplex.intVar(0, (int) INFTY);
+        cplex.addGe(ER_Req3, cplex.prod(cplex.sum(cplex.prod(AR3, 1.0/ATR*ER), cplex.prod(AR3, 1.0/A*EB)), .15));
         //PR_Req3 = ceil((ER_Req3/E)*P); --> personnel required for runway operations
         IloNumVar PR_Req3 = cplex.numVar(0, INFTY);
         cplex.addEq(PR_Req3, cplex.prod(ER_Req3, P/E));
@@ -662,7 +662,7 @@ public class Airport
         cplex.addEq(CRHP3, cplex.prod(MFP, cplex.prod(CHP, AR3)));
         //CREE3 = TEC *(AR3/AH); --> energy cost for runway area
         IloNumVar CREE3 = cplex.numVar(0, INFTY);
-        cplex.addEq(CREE3, TEC*ATR/A); //*******************************DOUBLE CHECK THIS
+        cplex.addEq(CREE3, TEC*ATR/A); 
         //CR_Total3 = LC3*(CRP3 + CREE3) + CRE3 + CRHP3; --> total cost for life cycle for runway pavement
         IloNumVar CR_Total3 = cplex.numVar(0, INFTY);
         cplex.addEq(CR_Total3, cplex.sum(cplex.prod(LC3, cplex.sum(CRP3, CREE3)), cplex.sum(CRE3, CRHP3)));
@@ -673,7 +673,7 @@ public class Airport
         cplex.addEq(EG_Req3, cplex.prod(cplex.sum(cplex.prod(AG3, 1.0/ATG*EG), cplex.prod(AG3, 1.0/A*EB)), .05));
         //PG_Req3 = ceil((EG_Req3/E)*PR); --> personnel required for gate operations
         IloNumVar PG_Req3 = cplex.numVar(0, INFTY);
-        cplex.addEq(PG_Req3, cplex.prod(EG_Req3, PR/E));
+        cplex.addEq(PG_Req3, cplex.prod(EG_Req3, P/E));
         /*if PG_Req3<= 2 && AG3 > 0
                 PG_Req3 = 2;
           else                        
@@ -694,8 +694,8 @@ public class Airport
         IloNumVar CG_Total3 = cplex.numVar(0, INFTY);
         cplex.addEq(CG_Total3, cplex.sum(cplex.prod(15, cplex.sum(CGP3, CGEE3)), cplex.sum(CGHP3, CGE3)));
         
-        
         cplex.solve();
+        
         System.out.println("Method 1 runway cost: " + cplex.getValue(CR_Total1));
         System.out.println("Method 1 gate cost: " + cplex.getValue(CG_Total1));
         System.out.println("Method 2 runway cost: " + cplex.getValue(CR_Total2));
@@ -703,18 +703,8 @@ public class Airport
         System.out.println("Method 3 runway cost: " + cplex.getValue(CR_Total3));
         System.out.println("Method 3 gate cost: " + cplex.getValue(CG_Total3));
         System.out.println();
-        System.out.println("RUNWAY AREA: " + cplex.getValue(AR3));
-        //System.out.println("TAXI AREA: " + cplex.getValue(AT));
-        System.out.println("GATE AREA: " + cplex.getValue(AG3));
-        //System.out.println("LHS: " + cplex.getValue(lhs));
-        
-        System.out.println("EG_req: " + cplex.getValue(EG_Req3));
-        System.out.println("PG_req: " + cplex.getValue(PG_Req3));
-        //System.out.println("DeiceG_req: " + cplex.getValue(DeiceG_Req3));
-        System.out.println("CGP1: " + cplex.getValue(CGP3));
-        System.out.println("CGE1: " + cplex.getValue(CGE3));
-        System.out.println("CGHP: " + cplex.getValue(CGHP3));
-        System.out.println("CGEE: " + cplex.getValue(CGEE3));
+        System.out.println("Runway area for current method: " + cplex.getValue(AR3));
+        System.out.println("Gate are for current method: " + cplex.getValue(AG3));
         
         System.out.println("Gates\tx\tflow_in\tflow_out");
         for(Gate g : gates)
