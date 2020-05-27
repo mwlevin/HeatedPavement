@@ -1,0 +1,5 @@
+id {links} {entering nodes} {exiting nodes}
+30L	{}	{}	{}
+30R
+17
+22

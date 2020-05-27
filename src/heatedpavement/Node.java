@@ -42,8 +42,31 @@ public class Node extends AirportComponent
         
         //System.out.println(getName());
         
-        // conservation of flow
+        // conservation of flow for snowplow paths
         IloLinearNumExpr lhs = cplex.linearNumExpr();
+        IloLinearNumExpr incomingPlow1 = cplex.linearNumExpr();
+        IloLinearNumExpr incomingPlow3 = cplex.linearNumExpr();
+        IloLinearNumExpr outgoingPlow1 = cplex.linearNumExpr();
+        IloLinearNumExpr outgoingPlow3 = cplex.linearNumExpr();
+        
+        if (Airport.enable_x1) {
+            for (Link l : getIncoming()) {
+                incomingPlow1.addTerm(1, l.y1_ij);
+            }
+            for (Link l : getOutgoing()) {
+                outgoingPlow1.addTerm(1, l.y1_ij);
+            }
+            cplex.addEq(incomingPlow1, outgoingPlow1);
+        }
+        if (Airport.enable_x2) {
+            for (Link l : getIncoming()) {
+                incomingPlow3.addTerm(1, l.y3_ij);
+            }
+            for (Link l : getOutgoing()) {
+                outgoingPlow3.addTerm(1, l.y3_ij);
+            }
+            cplex.addEq(incomingPlow3, outgoingPlow3);
+        }
         
         for(Link l : getIncoming())
         {

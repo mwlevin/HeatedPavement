@@ -1,0 +1,5 @@
+id	node	area	aircraft class
+1	15	2000	C
+2	16	2000	B
+3	17	2000	B
+4	18	2000	A
