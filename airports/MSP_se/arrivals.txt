@@ -1,2 +1,5 @@
-aircraft class	number
-B	2
+aircraft class		number
+A			1
+B			5
+C			10
+D			1
