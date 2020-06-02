@@ -27,9 +27,9 @@ import java.util.Scanner;
 public class Airport
 {
     // enable x_1, x_2, x_3
-    public static final boolean enable_x1 = false;
+    public static final boolean enable_x1 = true;
     public static final boolean enable_x2 = false;
-    public static final boolean enable_x3 = true;
+    public static final boolean enable_x3 = false;
 
 
     // define the runways in 1 direction only please
@@ -509,7 +509,7 @@ public class Airport
         //----------------------------------
         // objective function -> cost models
 
-        // this is for x_3, autonomous vehicles
+        // this is for x_2, autonomous vehicles
 
         // Life Cycle: 15 years
         IloLinearNumExpr AR2 = cplex.linearNumExpr();
@@ -611,7 +611,7 @@ public class Airport
 
         //----------------------------------
         //**METHOD 3: heated pavements**
-        //for x_2
+        //for x_3
         //life cycle: 20 years
         //----------------------------------
         IloLinearNumExpr AR3 = cplex.linearNumExpr();
