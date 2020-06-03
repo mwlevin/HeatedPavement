@@ -78,7 +78,7 @@ public abstract class Link extends AirportComponent
         
         cplex.addLe(x, cplex.sum(x_1, cplex.sum(x_2, x_3)));
         cplex.addLe(x_1, y1_ij);
-        cplex.addLe(x_2, y3_ij);
+        cplex.addLe(x_3, y3_ij);
     }
     
     public void addConstraints(IloCplex cplex) throws IloException

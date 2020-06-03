@@ -52,18 +52,38 @@ public class Node extends AirportComponent
         if (Airport.enable_x1) {
             for (Link l : getIncoming()) {
                 incomingPlow1.addTerm(1, l.y1_ij);
+                
+                if(l instanceof Gate)
+                {
+                    outgoingPlow1.addTerm(1, l.y1_ij);
+                }
             }
             for (Link l : getOutgoing()) {
                 outgoingPlow1.addTerm(1, l.y1_ij);
+                
+                if(l instanceof Gate)
+                {
+                    incomingPlow1.addTerm(1, l.y1_ij);
+                }
             }
             cplex.addEq(incomingPlow1, outgoingPlow1);
         }
-        if (Airport.enable_x2) {
+        if (Airport.enable_x3) {
             for (Link l : getIncoming()) {
                 incomingPlow3.addTerm(1, l.y3_ij);
+                
+                if(l instanceof Gate)
+                {
+                    outgoingPlow3.addTerm(1, l.y3_ij);
+                }
             }
             for (Link l : getOutgoing()) {
                 outgoingPlow3.addTerm(1, l.y3_ij);
+                
+                if(l instanceof Gate)
+                {
+                    incomingPlow3.addTerm(1, l.y3_ij);
+                }
             }
             cplex.addEq(incomingPlow3, outgoingPlow3);
         }

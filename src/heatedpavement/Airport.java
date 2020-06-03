@@ -27,9 +27,9 @@ import java.util.Scanner;
 public class Airport
 {
     // enable x_1, x_2, x_3
-    public static final boolean enable_x1 = true;
+    public static final boolean enable_x1 = false;
     public static final boolean enable_x2 = false;
-    public static final boolean enable_x3 = false;
+    public static final boolean enable_x3 = true;
 
 
     // define the runways in 1 direction only please
@@ -431,7 +431,7 @@ public class Airport
         double CPM = 52000;    // maintance personnel salary per year per person
         double CPR = 104000;    // repair shop personnel salary per year per person
 
-        double INFTY = Integer.MAX_VALUE;
+        double INFTY = Double.MAX_VALUE;
 
 
         //----------------------------------
@@ -439,6 +439,7 @@ public class Airport
         //for x_1
         //life cycle: 15 years
         //----------------------------------
+        
         IloLinearNumExpr AR1 = cplex.linearNumExpr();
         //calculate runway area
         for (Runway r : runways) {
@@ -477,7 +478,9 @@ public class Airport
         IloNumVar CRD1 = cplex.numVar(0, INFTY);
         cplex.addEq(CRD1, cplex.prod(DeiceR_Req1, 25));
         //CR_Total1 = 15*(CRP1+CRD1) + CRE1; --> total cost for life cycle for runway pavement
+        
         IloNumVar CR_Total1 = cplex.numVar(0, INFTY);
+        
         cplex.addEq(CR_Total1, cplex.sum(cplex.prod(cplex.sum(CRP1, CRD1), 15), CRE1));
 
         //Gate pavement:
@@ -512,6 +515,7 @@ public class Airport
         // this is for x_2, autonomous vehicles
 
         // Life Cycle: 15 years
+        
         IloLinearNumExpr AR2 = cplex.linearNumExpr();
         // calculate runway area
         for(Runway r : runways)
@@ -598,15 +602,8 @@ public class Airport
         IloNumVar CG_Total2 = cplex.numVar(0, INFTY);
         cplex.addEq(CG_Total2, cplex.sum(cplex.prod(LC, cplex.sum(CGP2, CGD2)), CGE2));
 
-        IloLinearNumExpr total_flow = cplex.linearNumExpr();
-
-        for(Taxiway t : taxiways)
-        {
-            total_flow.addTerm(0.001, t.flow_ij);
-            total_flow.addTerm(0.001, t.flow_ji);
-        }
-
-        cplex.addMinimize(cplex.sum(total_flow, cplex.sum(CR_Total2, CG_Total2)));
+        
+        
 
 
         //----------------------------------
@@ -693,6 +690,39 @@ public class Airport
         //CG_Total3 = 15*(CGP3 +CGEE3) + CGHP3 + CGE3; --> total cost for life cycle for gate pavement
         IloNumVar CG_Total3 = cplex.numVar(0, INFTY);
         cplex.addEq(CG_Total3, cplex.sum(cplex.prod(15, cplex.sum(CGP3, CGEE3)), cplex.sum(CGHP3, CGE3)));
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        IloLinearNumExpr obj = cplex.linearNumExpr();
+        obj.addTerm(1, CR_Total1);
+        obj.addTerm(1, CG_Total1);
+        obj.addTerm(1, CR_Total2);
+        obj.addTerm(1, CG_Total2);
+        obj.addTerm(1, CR_Total3);
+        obj.addTerm(1, CG_Total3);
+                
+        for(Taxiway t : taxiways)
+        {
+            obj.addTerm(0.001, t.flow_ij);
+            obj.addTerm(0.001, t.flow_ji);
+        }
+
+        cplex.addMinimize(obj);
+        
+        
+        
+        
 
         cplex.solve();
 
