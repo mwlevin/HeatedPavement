@@ -101,7 +101,7 @@ public class MapViewer extends JMapViewer
         super.paintComponent(g);
 
        // draw links here, use Graphics drawing tools
-       // use getMapPosition(Location, false) to get the (x,y) coordinate
+       // use getMapPosition(Coordinate, false) to get the (x,y) coordinate
     }
     
     
