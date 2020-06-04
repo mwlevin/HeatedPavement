@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.Scrollable;
 import javax.swing.Timer;
@@ -51,24 +52,18 @@ import org.openstreetmap.gui.jmapviewer.tilesources.OsmTileSource;
  */
 public class MapViewer extends JMapViewer
 {
-    private static final Point[] move = {new Point(1, 0), new Point(0, 1), new Point(-1, 0), new Point(0, -1)};
-
-    private Set<Node> nodes;
-    private Set<Link> links;
-    
-    
-    
-
-    private int time;
-    
+    public static void main(String[] args)
+    {
+        JFrame frame = new JFrame();
+        frame.add(new MapViewer(500, 500));
+        frame.pack();
+        frame.setVisible(true);
+    }
     private int scale;
 
     public MapViewer(int viewWidth, int viewHeight)
     {
         setPreferredSize(new Dimension(viewWidth, viewHeight));
-        
-        nodes = new HashSet<Node>();
-        links = new HashSet<Link>();
         
         scale = 1;
         
