@@ -82,9 +82,9 @@ public class MapViewer extends JMapViewer
     
 
     
-    public void center(Location n)
+    public void center(Coordinate c)
     {
-        setDisplayPosition(new Point(getWidth()/2, getHeight()/2), n.getCoordinate(), getZoom());
+        setDisplayPosition(new Point(getWidth()/2, getHeight()/2), c, getZoom());
     }
     
     
