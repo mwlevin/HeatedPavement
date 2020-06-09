@@ -15,7 +15,7 @@ import ilog.cplex.IloCplex;
 public abstract class AirportComponent 
 {
     public static enum Type {runway, taxiway, gate, none};
-    public static char size; // A--F
+    //public static char size; // A--F
     
     private String name;
     
@@ -50,7 +50,16 @@ public abstract class AirportComponent
     {
         switch(getType())
         {
-            case gate: return 2;
+            case gate: 
+                char size = ((Gate)this).getSize();
+                if(size == 'D' || size == 'E' || size == 'F')
+                {
+                    return 1.5; // 1 departure and 1 arrival per 90min
+                }
+                else
+                {
+                    return 2; // 1 departure and 1 arrival
+                }
             case runway: 
                 if(mix_index <= 20)
                 {
@@ -72,7 +81,7 @@ public abstract class AirportComponent
                 {
                     return 50;
                 }
-            case taxiway: return 100;
+            case taxiway: return 90;
             default: return 0;
         }
     }
