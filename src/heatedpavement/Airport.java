@@ -481,7 +481,7 @@ public class Airport
         //Runway pavement:
         //ER_Req1 = ceil((AR1/ATR)*ER + (AR1/A)*EB); --> required equipment for runway operations
         IloIntVar ER_Req1 = cplex.intVar(0, (int) INFTY);
-        cplex.addGe(ER_Req1, cplex.sum(cplex.prod(AR1, 1.0/ATR*ER), cplex.sum(AR1, 1.0/A*EB)));
+        cplex.addGe(ER_Req1, cplex.sum(cplex.prod(AR1, 1.0/ATR*ER), cplex.prod(AR1, 1.0/A*EB)));
         //PR_Req1 = ceil((ER_Req1/E)*P); --> personnel required for runway operations
         IloIntVar PR_Req1 = cplex.intVar(0, (int) INFTY);
         cplex.addGe(PR_Req1, cplex.prod(ER_Req1, P/E));
@@ -493,7 +493,7 @@ public class Airport
         cplex.addEq(CRP1, cplex.sum(cplex.prod(CPM, cplex.prod(PR_Req1, PM/P)), cplex.prod(CPR, cplex.prod(PR_Req1, PR/P))));
         //CRE1 = ((AR1/A)*EB*(CEB) + (AR1/ATR)*ER*(CER)) * MF1; --> life time cost of equipment and maintenance
         IloNumVar CRE1 = cplex.numVar(0, INFTY);
-        cplex.addEq(CRE1, cplex.sum(cplex.prod(AR1, 1.0/A*EB*CEB), cplex.prod(AR1, 1.0/ATR*ER*CER*MF)));
+        cplex.addEq(CRE1, cplex.prod(cplex.sum(cplex.prod(AR1, 1.0/A*EB*CEB), cplex.prod(AR1, 1.0/ATR*ER*CER)), MF));
         //CRD1 = (DeiceR_Req1)* 25; --> annual cost of deicing material
         IloNumVar CRD1 = cplex.numVar(0, INFTY);
         cplex.addEq(CRD1, cplex.prod(DeiceR_Req1, 25));
@@ -518,7 +518,7 @@ public class Airport
         cplex.addEq(CGP1, cplex.sum(cplex.prod(CPM, cplex.prod(PG_Req1, PM/P)), cplex.prod(CPR, cplex.prod(PG_Req1, PR/P))));
         //CGE1 = ((AG1/A)*EB*(CEB) + (AG1/ATG)*EG*(CEG)) * MF1; --> life time cost of equipment and maintenance
         IloNumVar CGE1 = cplex.numVar(0, INFTY);
-        cplex.addEq(CGE1, cplex.sum(cplex.prod(AG1, 1.0/A*EB*CEB), cplex.prod(cplex.prod(AG1, 1.0/ATG*EG*CEG), MF)));
+        cplex.addEq(CGE1, cplex.prod(cplex.sum(cplex.prod(AG1, 1.0/A*EB*CEB), cplex.prod(AG1, 1.0/ATG*EG*CEG)), MF));
         //CGD1 = (DeiceG_Req1)* 25; --> annual cost of deicing
         IloNumVar CGD1 = cplex.numVar(0, INFTY);
         cplex.addEq(CGD1, cplex.prod(DeiceG_Req1, 25));
@@ -566,7 +566,7 @@ public class Airport
 
         // make this an IloIntVar, and make the constraint GE to convert to integer variable
         IloIntVar ER_Req2 = cplex.intVar(0, (int) INFTY);
-        cplex.addGe(ER_Req2, cplex.sum(cplex.prod(AR2, 1.0/ATR*ER), cplex.sum(AR2, 1.0/A*EB)));
+        cplex.addGe(ER_Req2, cplex.sum(cplex.prod(AR2, 1.0/ATR*ER), cplex.prod(AR2, 1.0/A*EB)));
 
 
         // PR_Req2 = ceil((ER_Req2/E)*PR);                // personnel required for runway operations
@@ -582,7 +582,7 @@ public class Airport
 
         //CRE2 = ((AR2/A)*EB*(CEB) + (AR2/ATR)*ER*(CER)) * MF2 * ACF ;        //life time cost of equipment and maintance
         IloNumVar CRE2 = cplex.numVar(0, INFTY);
-        cplex.addEq(CRE2, cplex.sum(cplex.prod(AR2, EB*CEB/A), cplex.prod(AR2, ER*CER/ATR*MF*ACF)));
+        cplex.addEq(CRE2, cplex.prod(cplex.prod(cplex.sum(cplex.prod(AR2, EB*CEB/A), cplex.prod(AR2, ER*CER/ATR)), MF), ACF));
 
         //CRD2 = (DeiceR_Req2)* 25;                             // annual cost of deicing material
         IloNumVar CRD2 = cplex.numVar(0, INFTY);
@@ -594,7 +594,7 @@ public class Airport
 
         //// Gate Area
 
-        //EG_Req2 = ceil((AG2/ATG)*EG + (AG2/A)*EB);        // required equipment for gate operations, assume same efficieny as current equipment
+        //EG_Req2 = ceil((AG2/ATG)*EG + (AG2/A)*EB);        // required equipment for gate operations, assume same efficiency as current equipment
         IloIntVar EG_Req2 = cplex.intVar(0, (int) INFTY);
         cplex.addGe(EG_Req2, cplex.sum(cplex.prod(AG2, EG/ATG), cplex.prod(AG2, EB/A)));
 
@@ -612,7 +612,7 @@ public class Airport
 
         //CGE2 = ((AG2/A)*EB*(CEB) + (AG2/ATG)*EG*(CEG)) * MF2 * ACF;        //life time cost of equipment and maintance
         IloNumVar CGE2 = cplex.numVar(0, INFTY);
-        cplex.addEq(CGE2, cplex.sum(cplex.prod(AG2, EB*CEB/A), cplex.prod(AG2, EG*CEG/ATG*MF*ACF)));
+        cplex.addEq(CGE2, cplex.prod(cplex.prod(cplex.sum(cplex.prod(AG2, EB*CEB/A), cplex.prod(AG2, EG*CEG/ATG)), MF), ACF));
 
         //CGD2 = (DeiceG_Req2)* 25;                             // annual cost of deicing material
         IloNumVar CGD2 = cplex.numVar(0, INFTY);
@@ -706,7 +706,7 @@ public class Airport
         cplex.addEq(CGHP3, cplex.prod(MFP, cplex.prod(CHP, AG3)));
         //CGEE3 = TEC *(AG3/AH); --> energy cost for gate area
         IloNumVar CGEE3 = cplex.numVar(0, INFTY);
-        cplex.addEq(CGEE3, cplex.prod(1.0/A, cplex.prod(TEC, AG3)));
+        cplex.addEq(CGEE3, cplex.prod(1.0/A, cplex.prod(TEC, AG3))); //FIX THIS
         //CG_Total3 = 15*(CGP3 +CGEE3) + CGHP3 + CGE3; --> total cost for life cycle for gate pavement
         IloNumVar CG_Total3 = cplex.numVar(0, INFTY);
         cplex.addEq(CG_Total3, cplex.sum(cplex.prod(15, cplex.sum(CGP3, CGEE3)), cplex.sum(CGHP3, CGE3)));
@@ -753,8 +753,25 @@ public class Airport
         System.out.println("Method 3 runway cost: " + cplex.getValue(CR_Total3));
         System.out.println("Method 3 gate cost: " + cplex.getValue(CG_Total3));
         System.out.println();
-        System.out.println("Runway area for current method: " + cplex.getValue(AR3));
-        System.out.println("Gate are for current method: " + cplex.getValue(AG3));
+        System.out.println("Runway area for current method: " + cplex.getValue(AR2));
+        System.out.println("Gate area for current method: " + cplex.getValue(AG2));
+        System.out.println();
+        System.out.println("ATR: " + ATR);
+        System.out.println("A: " + A);
+        System.out.println("ER_Req: " + cplex.getValue(ER_Req3));
+        System.out.println("PR_Req: " + cplex.getValue(PR_Req3));
+        //System.out.println("DeiceR_req: " + cplex.getValue(DeiceR_Req3));
+        System.out.println("CRP: " + cplex.getValue(CRP3));
+        System.out.println("CRE: " + cplex.getValue(CRE3));
+        System.out.println("CRD: " + cplex.getValue(CRHP3));
+        System.out.println("CREE: " + cplex.getValue(CREE3));
+        System.out.println("EG_Req: " +cplex.getValue(EG_Req3));
+        System.out.println("PG_Req: " + cplex.getValue(PG_Req3));
+        System.out.println("CGP: " + cplex.getValue(CGP3));
+        System.out.println("CGE: " + cplex.getValue(CGE3));
+        System.out.println("CGHP: " + cplex.getValue(CGHP3));
+        System.out.println("CGEE: " + cplex.getValue(CGEE3));
+        System.out.println("TEC: " + TEC);
 
         System.out.println("Gates\tx\tflow_in\tflow_out");
         for(Gate g : gates)
