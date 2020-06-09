@@ -51,9 +51,31 @@ public abstract class AirportComponent
         switch(getType())
         {
             case gate: return 2;
-            case runway: return 50;
+            case runway: 
+                if(mix_index <= 20)
+                {
+                    return 59;
+                }
+                else if(mix_index <= 50)
+                {
+                    return 57;
+                }
+                else if(mix_index <= 80)
+                {
+                    return 56;
+                }
+                else if(mix_index <= 120)
+                {
+                    return 53;
+                }
+                else
+                {
+                    return 50;
+                }
             case taxiway: return 100;
             default: return 0;
         }
     }
+    
+    public static double mix_index = 0;
 }
