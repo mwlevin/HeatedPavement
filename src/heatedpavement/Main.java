@@ -18,7 +18,7 @@ public class Main {
      */
     public static void main(String[] args) throws Exception
     {
-        Airport test = new Airport("KEYW_09");
+        Airport test = new Airport("MSP_nw");
         test.solveCplex();
     }
     

@@ -25,6 +25,8 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.Line2D;
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -45,6 +47,9 @@ import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
 import org.openstreetmap.gui.jmapviewer.interfaces.TileLoaderListener;
 import org.openstreetmap.gui.jmapviewer.interfaces.TileSource;
 import org.openstreetmap.gui.jmapviewer.tilesources.OsmTileSource;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Scanner;
 
 /**
  *
@@ -69,6 +74,8 @@ public class MapViewer extends JMapViewer
         
         setFont(new Font("Arial", Font.BOLD, 14));
         
+        Coordinate startDisplay = new Coordinate(44.8830, -93.2230);
+        setDisplayPosition(startDisplay, 14);
     }
 
     
@@ -77,8 +84,6 @@ public class MapViewer extends JMapViewer
     {
         this.scale = scale;
     }
-    
-
     
 
     
@@ -94,17 +99,68 @@ public class MapViewer extends JMapViewer
         super.setZoomContolsVisible(visible);
     }
     
-    protected void paintComponent(Graphics window) 
-    {
+    protected void paintComponent(Graphics window) {
         Graphics2D g = (Graphics2D)window;
-        
         super.paintComponent(g);
-
-       // draw links here, use Graphics drawing tools
-       // use getMapPosition(Coordinate, false) to get the (x,y) coordinate
+        
+        g.setStroke(new BasicStroke(5));
+        Airport airport = null;
+        try {
+            airport = new Airport("MSP_nw");
+            airport.solveCplex();
+        }
+        catch (Exception e) {
+            System.out.println("exception caught");
+        }
+        for (Map.Entry<String, Link> entry : airport.lookupLink.entrySet()) {
+            g.setColor(Color.black);
+            Link l = entry.getValue();
+            System.out.println("x1: " + l.value_x1);
+            System.out.println("x2: " + l.value_x2);
+            System.out.println("x3: " + l.value_x3);
+            if (l.value_x1 == 1) {
+                g.setColor(Color.red);
+            }
+            if (l.value_x2 == 1) {
+                g.setColor(Color.white);
+            }
+            if (l.value_x3 == 1) {
+                g.setColor(Color.blue);
+            }
+            Point start = getMapPosition(l.source.coordinates, false);
+            Point end = getMapPosition(l.dest.coordinates, false);
+            g.drawLine(start.x, start.y, end.x, end.y);
+        }
+        
+        Scanner in = null;
+        try {
+           in = new Scanner(new File("airports/MSP_nw/gate_coordinates.txt")); 
+        }
+        catch (Exception e) {
+            System.out.println("exception caught");
+        }
+        in.nextLine();
+        while (in.hasNext()) {
+            g.setColor(Color.black);
+            in.next();
+            double latitude = in.nextDouble();
+            double longitude = in.nextDouble();
+            Coordinate coordinate = new Coordinate(latitude, longitude);
+            Point gate = getMapPosition(coordinate, false);
+            for (Gate gates : airport.gates) {
+                if (gates.value_x1 == 1) {
+                    g.setColor(Color.red);
+                }
+                if (gates.value_x2 == 1) {
+                    g.setColor(Color.white);
+                }
+                if (gates.value_x3 == 1) {
+                    g.setColor(Color.blue);
+                }
+            }
+            g.drawOval(gate.x, gate.y, 2, 2);
+        }
     }
-    
-    
     
     public void paintText(Graphics g, String name, Point position, int radius) {
 

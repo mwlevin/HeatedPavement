@@ -1,5 +1,4 @@
 aircraft class		number
-B			5
+B			18
 C			12
-A			1
-D			1
+D			6

@@ -10,6 +10,7 @@ import ilog.concert.IloLinearNumExpr;
 import ilog.cplex.IloCplex;
 import java.util.ArrayList;
 import java.util.List;
+import org.openstreetmap.gui.jmapviewer.Coordinate;
 
 /**
  *
@@ -19,12 +20,14 @@ public class Node extends AirportComponent
 {
     
     private List<Link> incoming, outgoing;
+    protected Coordinate coordinates;
     
     public Node(String name)
     {
         super(name);
         incoming = new ArrayList<>();
         outgoing = new ArrayList<>();
+        this.coordinates = null;
     }
     
     public void addConstraints(IloCplex cplex) throws IloException
@@ -68,21 +71,21 @@ public class Node extends AirportComponent
             }
             cplex.addEq(incomingPlow1, outgoingPlow1);
         }
-        if (Airport.enable_x3) {
+        if (Airport.enable_x2) {
             for (Link l : getIncoming()) {
-                incomingPlow3.addTerm(1, l.y3_ij);
+                incomingPlow3.addTerm(1, l.y2_ij);
                 
                 if(l instanceof Gate)
                 {
-                    outgoingPlow3.addTerm(1, l.y3_ij);
+                    outgoingPlow3.addTerm(1, l.y2_ij);
                 }
             }
             for (Link l : getOutgoing()) {
-                outgoingPlow3.addTerm(1, l.y3_ij);
+                outgoingPlow3.addTerm(1, l.y2_ij);
                 
                 if(l instanceof Gate)
                 {
-                    incomingPlow3.addTerm(1, l.y3_ij);
+                    incomingPlow3.addTerm(1, l.y2_ij);
                 }
             }
             cplex.addEq(incomingPlow3, outgoingPlow3);

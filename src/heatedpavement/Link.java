@@ -22,9 +22,10 @@ public abstract class Link extends AirportComponent
     protected IloIntVar x_1, x_2, x_3;
     
     protected IloIntVar y1_ij; //number of times type 1 snowplow (non-autonomous) drives across link (i, j)
-    protected IloIntVar y3_ij; //number of times type 3 snowplow (autonomous) drives across link (i, j)
+    protected IloIntVar y2_ij; //number of times type 2 snowplow (autonomous) drives across link (i, j)
     
-    private Node source, dest;  
+    protected Node source, dest; 
+    protected double value_x1, value_x2, value_x3;
     
     private double area;
     
@@ -59,7 +60,7 @@ public abstract class Link extends AirportComponent
         x_2 = cplex.intVar(0, 1);
         x_3 = cplex.intVar(0, 1);
         y1_ij = cplex.intVar(0, Integer.MAX_VALUE);
-        y3_ij = cplex.intVar(0, Integer.MAX_VALUE);
+        y2_ij = cplex.intVar(0, Integer.MAX_VALUE);
         
         if(!Airport.enable_x1)
         {
@@ -75,18 +76,25 @@ public abstract class Link extends AirportComponent
         {
             cplex.addEq(x_3, 0);
         }
+        if (Airport.enable_all) {
+            cplex.addGe(cplex.sum(x_1, cplex.sum(x_2, x_3)), 1);
+        }
         
         cplex.addLe(x, cplex.sum(x_1, cplex.sum(x_2, x_3)));
         cplex.addLe(x_1, y1_ij);
-        cplex.addLe(x_3, y3_ij);
+        cplex.addLe(x_2, y2_ij);
+    }
+    
+    public void solve(IloCplex cplex) throws IloException {
+        value_x1 = cplex.getValue(x_1);
+        value_x2 = cplex.getValue(x_2);
+        value_x3 = cplex.getValue(x_3);
     }
     
     public void addConstraints(IloCplex cplex) throws IloException
     {
         // nothing to do here
     }
-    
-    
     
     public Node getSource()
     {
