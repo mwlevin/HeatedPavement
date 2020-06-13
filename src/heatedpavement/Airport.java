@@ -216,6 +216,26 @@ public class Airport
             departures.put(filein.next().charAt(0), filein.nextDouble());
         }
         filein.close();
+        
+        // calculate mix index
+        int C = 0;
+        int D = 0;
+        int total = 0;
+        
+        for(char code : departures.keySet())
+        {
+            if(code == 'C')
+            {
+                C += departures.get(code);
+            }
+            else if(code == 'D' || code == 'E' || code == 'F')
+            {
+                D += departures.get(code);
+            }
+            
+            total += departures.get(code);
+        }
+        AirportComponent.mix_index = 100.0*C/total + 300.0*D/total;
 
 
         components = new ArrayList<>();
