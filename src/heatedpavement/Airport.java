@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import org.openstreetmap.gui.jmapviewer.Coordinate;
 
 /**
  *
@@ -27,39 +28,37 @@ import java.util.Scanner;
 public class Airport
 {
     // enable x_1, x_2, x_3
-    public static final boolean enable_x1 = false;
-    public static final boolean enable_x2 = false;
+    public static final boolean enable_x1 = true;
+    public static final boolean enable_x2 = true;
     public static final boolean enable_x3 = true;
-
+    public static final boolean enable_all = true;
 
     // define the runways in 1 direction only please
 
     private List<Runway> runways;
     private List<Node> nodes;
     private List<Taxiway> taxiways;
-    private List<Gate> gates;
+    protected List<Gate> gates;
+    private Map<String, Coordinate> coordinates;
 
     private List<AirportComponent> components;
 
     private Map<Character, Double> departures, arrivals;
 
-
     private Map<String, Node> lookupNode;
-    private Map<String, Link> lookupLink;
+    protected Map<String, Link> lookupLink;
     private List<String> runwayNodes, runwayLinks;
-
+    
     public Airport(String airportName) throws IOException
     {
         runways = new ArrayList<>();
         nodes = new ArrayList<>();
         taxiways = new ArrayList<>();
         gates = new ArrayList<>();
+        coordinates = new HashMap<>();
         components = new ArrayList<>();
         departures = new HashMap<>();
         arrivals = new HashMap<>();
-
-
-
         lookupNode = new HashMap<>();
         lookupLink = new HashMap<>();
 
@@ -67,7 +66,18 @@ public class Airport
 
         runwayNodes = new ArrayList<>();
         runwayLinks = new ArrayList<>();
-
+        
+        Scanner in = new Scanner(new File(directory+"nodes.txt"));
+        in.nextLine();
+        while (in.hasNext()) {
+            String name = in.next();
+            double latitude = in.nextDouble();
+            double longitude = in.nextDouble();
+            Coordinate coordinate = new Coordinate(latitude, longitude);
+            coordinates.put(name, coordinate);
+        }
+        in.close();
+        
         Scanner filein = new Scanner(new File(directory+"runways.txt"));
         filein.nextLine();
 
@@ -245,6 +255,8 @@ public class Airport
         if(!lookupNode.containsKey(name))
         {
             Node node = new Node(name);
+            Coordinate coordinate = coordinates.get(name);
+            node.coordinates = coordinate;
             if(!runwayNodes.contains(name))
             {
                 nodes.add(node);
@@ -297,7 +309,8 @@ public class Airport
     }
 
     public void solveCplex() throws IloException
-    {
+    {   
+
         IloCplex cplex = new IloCplex();
 
         for(AirportComponent c : components)
@@ -444,18 +457,18 @@ public class Airport
         //calculate runway area
         for (Runway r : runways) {
             for(RunwayLink l : r.getLinks()) {
-                AR1.addTerm(l.getArea(), l.x_1);
+                AR1.addTerm(l.getArea(), l.y1_ij);
             }
         }
         //calculate taxiway area
         IloLinearNumExpr AT1 = cplex.linearNumExpr();
         for(Taxiway t : taxiways) {
-            AT1.addTerm(t.getArea(), t.x_1);
+            AT1.addTerm(t.getArea(), t.y1_ij);
         }
         //calculate gate area
         IloLinearNumExpr AG1 = cplex.linearNumExpr();
         for(Gate g : gates) {
-            AG1.addTerm(g.getArea(), g.x_1);
+            AG1.addTerm(g.getArea(), g.y1_ij);
         }
 
         //Runway pavement:
@@ -522,7 +535,7 @@ public class Airport
         {
             for(RunwayLink l : r.getLinks())
             {
-                AR2.addTerm(l.getArea(), l.x_2);
+                AR2.addTerm(l.getArea(), l.y2_ij);
             }
         }
 
@@ -530,14 +543,14 @@ public class Airport
 
         for(Taxiway t : taxiways)
         {
-            AT2.addTerm(t.getArea(), t.x_2);
+            AT2.addTerm(t.getArea(), t.y2_ij);
         }
 
         IloLinearNumExpr AG2 = cplex.linearNumExpr();
 
         for(Gate g : gates)
         {
-            AG2.addTerm(g.getArea(), g.x_2);
+            AG2.addTerm(g.getArea(), g.y2_ij);
         }
 
         //Runway area:
@@ -577,6 +590,7 @@ public class Airport
         //EG_Req2 = ceil((AG2/ATG)*EG + (AG2/A)*EB);        // required equipment for gate operations, assume same efficiency as current equipment
         IloIntVar EG_Req2 = cplex.intVar(0, (int) INFTY);
         cplex.addGe(EG_Req2, cplex.sum(cplex.prod(AG2, EG/ATG), cplex.prod(AG2, EB/A)));
+        cplex.addLe(EG_Req2, cplex.sum(cplex.sum(cplex.prod(AG2, EG/ATG), cplex.prod(AG2, EB/A)), 1));
 
         //PG_Req2 = ceil((EG_Req2/E)*PR);                // personnel required for gate operations
         IloIntVar PG_Req2 = cplex.intVar(0, (int) INFTY);
@@ -659,7 +673,7 @@ public class Airport
         cplex.addEq(CRHP3, cplex.prod(MFP, cplex.prod(CHP, AR3)));
         //CREE3 = TEC *(AR3/AH); --> energy cost for runway area
         IloNumVar CREE3 = cplex.numVar(0, INFTY);
-        cplex.addEq(CREE3, TEC*ATR/A);
+        cplex.addEq(CREE3, cplex.prod(AR3, .99)); //.99 is cost per sq ft of runway. Had to do it this way because divison was weird
         //CR_Total3 = LC3*(CRP3 + CREE3) + CRE3 + CRHP3; --> total cost for life cycle for runway pavement
         IloNumVar CR_Total3 = cplex.numVar(0, INFTY);
         cplex.addEq(CR_Total3, cplex.sum(cplex.prod(LC3, cplex.sum(CRP3, CREE3)), cplex.sum(CRE3, CRHP3)));
@@ -686,7 +700,7 @@ public class Airport
         cplex.addEq(CGHP3, cplex.prod(MFP, cplex.prod(CHP, AG3)));
         //CGEE3 = TEC *(AG3/AH); --> energy cost for gate area
         IloNumVar CGEE3 = cplex.numVar(0, INFTY);
-        cplex.addEq(CGEE3, cplex.prod(1.0/A, cplex.prod(TEC, AG3))); //FIX THIS
+        cplex.addEq(CGEE3, cplex.prod(AG3, .97)); //.97 is cost per sq ft of gate. Workaround for division issues
         //CG_Total3 = 15*(CGP3 +CGEE3) + CGHP3 + CGE3; --> total cost for life cycle for gate pavement
         IloNumVar CG_Total3 = cplex.numVar(0, INFTY);
         cplex.addEq(CG_Total3, cplex.sum(cplex.prod(15, cplex.sum(CGP3, CGEE3)), cplex.sum(CGHP3, CGE3)));
@@ -721,10 +735,16 @@ public class Airport
         cplex.addMinimize(obj);
         
         
-        
-        
 
         cplex.solve();
+        for (Map.Entry<String, Link> entry : lookupLink.entrySet()) {
+            Link l = entry.getValue();
+            l.solve(cplex);
+        }
+        for (Gate g : gates) {
+            Link l = g;
+            l.solve(cplex);
+        }
 
         System.out.println("Method 1 runway cost: " + cplex.getValue(CR_Total1));
         System.out.println("Method 1 gate cost: " + cplex.getValue(CG_Total1));
@@ -733,25 +753,30 @@ public class Airport
         System.out.println("Method 3 runway cost: " + cplex.getValue(CR_Total3));
         System.out.println("Method 3 gate cost: " + cplex.getValue(CG_Total3));
         System.out.println();
-        System.out.println("Runway area for current method: " + cplex.getValue(AR2));
-        System.out.println("Gate area for current method: " + cplex.getValue(AG2));
+        System.out.println("Runway area for current method: " + cplex.getValue(AR3));
+        System.out.println("Gate area for current method: " + cplex.getValue(AG3));
         System.out.println();
         System.out.println("ATR: " + ATR);
         System.out.println("A: " + A);
-        System.out.println("ER_Req: " + cplex.getValue(ER_Req3));
+        System.out.println("ER_Req: " + cplex.getValue(ER_Req2));
         System.out.println("PR_Req: " + cplex.getValue(PR_Req3));
-        //System.out.println("DeiceR_req: " + cplex.getValue(DeiceR_Req3));
         System.out.println("CRP: " + cplex.getValue(CRP3));
         System.out.println("CRE: " + cplex.getValue(CRE3));
         System.out.println("CRD: " + cplex.getValue(CRHP3));
         System.out.println("CREE: " + cplex.getValue(CREE3));
-        System.out.println("EG_Req: " +cplex.getValue(EG_Req3));
+        System.out.println("EG_Req: " +cplex.getValue(EG_Req2));
         System.out.println("PG_Req: " + cplex.getValue(PG_Req3));
         System.out.println("CGP: " + cplex.getValue(CGP3));
         System.out.println("CGE: " + cplex.getValue(CGE3));
         System.out.println("CGHP: " + cplex.getValue(CGHP3));
         System.out.println("CGEE: " + cplex.getValue(CGEE3));
         System.out.println("TEC: " + TEC);
+        System.out.println();
+        for (Map.Entry<String, Link> entry : lookupLink.entrySet()) {
+            Link l = entry.getValue();
+            System.out.println(entry.getKey() + " y1_ij: " + cplex.getValue(l.y1_ij) + " x1: " + cplex.getValue(l.x_1));
+            System.out.println(entry.getKey() + " y2_ij: " + cplex.getValue(l.y2_ij) + " x2: " + cplex.getValue(l.x_2));
+        }
 
         System.out.println("Gates\tx\tflow_in\tflow_out");
         for(Gate g : gates)
