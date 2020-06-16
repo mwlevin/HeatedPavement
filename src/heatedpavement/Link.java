@@ -26,6 +26,7 @@ public abstract class Link extends AirportComponent
     
     protected Node source, dest; 
     protected double value_x1, value_x2, value_x3;
+    protected double value_y1, value_y2, value_yBoth;
     
     private double area;
     
@@ -89,6 +90,9 @@ public abstract class Link extends AirportComponent
         value_x1 = cplex.getValue(x_1);
         value_x2 = cplex.getValue(x_2);
         value_x3 = cplex.getValue(x_3);
+        value_y1 = cplex.getValue(y1_ij);
+        value_y2 = cplex.getValue(y2_ij);
+        value_yBoth = value_y1 + value_y2;
     }
     
     public void addConstraints(IloCplex cplex) throws IloException

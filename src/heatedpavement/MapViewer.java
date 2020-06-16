@@ -99,14 +99,83 @@ public class MapViewer extends JMapViewer
         super.setZoomContolsVisible(visible);
     }
     
+    protected Color y1Color(Link l) {
+        if (l.value_y1 == 0) { //=0, blue
+           Color min = new Color(32, 95, 131);
+           return min;
+        }
+        if (l.value_y1 > 0 && l.value_y1 < 4) { //1-3, green
+            Color middle1 = new Color(56, 128, 124);
+            return middle1;
+        }
+        if (l.value_y1 > 3 && l.value_y1 < 8) { //4-7, purple
+            Color middle2 = new Color(119, 104, 133);
+            return middle2;
+        }
+        if (l.value_y1 > 7 && l.value_y1 < 12) { //8-11, maroon
+            Color middle3 = new Color(95, 26, 55);
+            return middle3;
+        }
+        Color max = new Color(4, 3, 15); //>11, black
+        return max;
+    }
+    
+    protected Color y2Color(Link l) {
+        if (l.value_y2 == 0) { //=0, blue
+            Color min = new Color(38, 84, 124);
+            return min;
+        }
+        if (l.value_y2 > 0 && l.value_y2 < 4) { //1-3, pink/red
+            Color middle1 = new Color(239, 71, 111);
+            return middle1;
+        }
+        if (l.value_y2 > 3 && l.value_y2 < 8) { //4-7, yellow
+            Color middle2 = new Color(255, 209, 102);
+            return middle2;
+        }
+        if (l.value_y2 > 7 && l.value_y2 < 12) { //8-11, green
+            Color middle3 = new Color(6, 215, 160);
+            return middle3;
+        }
+        Color max = new Color(61, 61, 61); //>11, gray
+        return max;
+    }
+    
+    protected Color bothColor(Link l) {
+        if (l.value_yBoth == 0) { //=0, cyan
+            Color min = new Color(79, 248, 194);
+            return min;
+        }
+        if (l.value_yBoth > 0 && l.value_y2 < 4) { //1-3, green
+            Color middle1 = new Color(0, 82, 45);
+            return middle1;
+        }
+        if (l.value_yBoth > 3 && l.value_y2 < 8) { //4-7, yellow
+            Color middle2 = new Color(255, 209, 102);
+            return middle2;
+        }
+        if (l.value_yBoth > 7 && l.value_y2 < 12) { //8-11, orange
+            Color middle3 = new Color(239, 138, 23);
+            return middle3;
+        }
+        Color max = new Color(239, 41, 23); //>11, red
+        return max;
+    }
+    
     protected void paintComponent(Graphics window) {
         Graphics2D g = (Graphics2D)window;
         super.paintComponent(g);
         
+        boolean colorcodeY = true; //boolean to see if we should color code based on y or x
+        boolean lookAtY1 = false; //color code based on only y1 values
+        boolean lookAtY2 = true; //color code based on only y2 values
+        boolean lookAtBoth = false; //color code based on sum y1+y2.
+                                    //If this is true, lookAtY1 and lookAtY2 should be false
         g.setStroke(new BasicStroke(5));
         Airport airport = null;
+        //drawing color coded lines according to x values
         try {
-            airport = new Airport("MSP_nw");
+            airport = new Airport("MSP_nw"); //change this to change the airport
             airport.solveCplex();
         }
         catch (Exception e) {
@@ -115,23 +184,39 @@ public class MapViewer extends JMapViewer
         for (Map.Entry<String, Link> entry : airport.lookupLink.entrySet()) {
             g.setColor(Color.black);
             Link l = entry.getValue();
-            System.out.println("x1: " + l.value_x1);
-            System.out.println("x2: " + l.value_x2);
-            System.out.println("x3: " + l.value_x3);
-            if (l.value_x1 == 1) {
-                g.setColor(Color.red);
+            if (colorcodeY) {
+                //System.out.println("y1: " + l.value_y1);
+                //System.out.println("y2: " + l.value_y2);
+                if (lookAtY1) {
+                    g.setColor(y1Color(l));
+                }
+                if (lookAtY2) {
+                    g.setColor(y2Color(l));
+                }
+                if (lookAtBoth) {
+                    g.setColor(bothColor(l));
+                }
             }
-            if (l.value_x2 == 1) {
-                g.setColor(Color.white);
-            }
-            if (l.value_x3 == 1) {
-                g.setColor(Color.blue);
+            else {
+                //System.out.println("x1: " + l.value_x1);
+                //System.out.println("x2: " + l.value_x2);
+                //System.out.println("x3: " + l.value_x3);
+                if (l.value_x1 == 1) {
+                    g.setColor(Color.red);
+                }
+                if (l.value_x2 == 1) {
+                    g.setColor(Color.green);
+                }
+                if (l.value_x3 == 1) {
+                    g.setColor(Color.blue);
+                }  
             }
             Point start = getMapPosition(l.source.coordinates, false);
             Point end = getMapPosition(l.dest.coordinates, false);
             g.drawLine(start.x, start.y, end.x, end.y);
         }
         
+        //drawing gates
         Scanner in = null;
         try {
            in = new Scanner(new File("airports/MSP_nw/gate_coordinates.txt")); 
@@ -148,14 +233,27 @@ public class MapViewer extends JMapViewer
             Coordinate coordinate = new Coordinate(latitude, longitude);
             Point gate = getMapPosition(coordinate, false);
             for (Gate gates : airport.gates) {
-                if (gates.value_x1 == 1) {
-                    g.setColor(Color.red);
+                if (colorcodeY) {
+                    if (lookAtY1) {
+                        g.setColor(y1Color(gates));
+                    }
+                    if (lookAtY2) {
+                        g.setColor(y2Color(gates));
+                    }
+                    if (lookAtBoth) {
+                        g.setColor(bothColor(gates));
+                    }
                 }
-                if (gates.value_x2 == 1) {
-                    g.setColor(Color.white);
-                }
-                if (gates.value_x3 == 1) {
-                    g.setColor(Color.blue);
+                else {
+                    if (gates.value_x1 == 1) {
+                        g.setColor(Color.red);
+                    }
+                    if (gates.value_x2 == 1) {
+                        g.setColor(Color.white);
+                    }
+                    if (gates.value_x3 == 1) {
+                        g.setColor(Color.blue);
+                    }
                 }
             }
             g.drawOval(gate.x, gate.y, 2, 2);
