@@ -28,8 +28,8 @@ import org.openstreetmap.gui.jmapviewer.Coordinate;
 public class Airport
 {
     // enable x_1, x_2, x_3
-    public static final boolean enable_x1 = false;
-    public static final boolean enable_x2 = true;
+    public static final boolean enable_x1 = true;
+    public static final boolean enable_x2 = false;
     public static final boolean enable_x3 = false;
     public static final boolean enable_all = false;
 
