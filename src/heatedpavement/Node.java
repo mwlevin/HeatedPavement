@@ -53,7 +53,7 @@ public class Node extends AirportComponent
                 
                 if(l instanceof Gate)
                 {
-                    outgoingPlow1.addTerm(1, l.y1_ij);
+                    outgoingPlow1.addTerm(1, l.y1_ji);
                 }
             }
             for (Link l : getOutgoing()) {
@@ -61,7 +61,7 @@ public class Node extends AirportComponent
                 
                 if(l instanceof Gate)
                 {
-                    incomingPlow1.addTerm(1, l.y1_ji);
+                    incomingPlow1.addTerm(1, l.y1_ij);
                 }
             }
             cplex.addEq(incomingPlow1, outgoingPlow1);
@@ -72,7 +72,7 @@ public class Node extends AirportComponent
                 
                 if(l instanceof Gate)
                 {
-                    outgoingPlow3.addTerm(1, l.y2_ij);
+                    outgoingPlow3.addTerm(1, l.y2_ji);
                 }
             }
             for (Link l : getOutgoing()) {
@@ -80,7 +80,7 @@ public class Node extends AirportComponent
                 
                 if(l instanceof Gate)
                 {
-                    incomingPlow3.addTerm(1, l.y2_ji);
+                    incomingPlow3.addTerm(1, l.y2_ij);
                 }
             }
             cplex.addEq(incomingPlow3, outgoingPlow3);
