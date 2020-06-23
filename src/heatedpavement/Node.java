@@ -36,12 +36,7 @@ public class Node extends AirportComponent
         
         super.addConstraints(cplex);
         
-        // runways are handled separately in the runway class
         
-        if(isRunway())
-        {
-            return;
-        }
         
         //System.out.println(getName());
         
@@ -51,10 +46,10 @@ public class Node extends AirportComponent
         IloLinearNumExpr incomingPlow3 = cplex.linearNumExpr();
         IloLinearNumExpr outgoingPlow1 = cplex.linearNumExpr();
         IloLinearNumExpr outgoingPlow3 = cplex.linearNumExpr();
-        
+        // this is node i
         if (Airport.enable_x1) {
             for (Link l : getIncoming()) {
-                incomingPlow1.addTerm(1, l.y1_ij);
+                incomingPlow1.addTerm(1, l.y1_ji);
                 
                 if(l instanceof Gate)
                 {
@@ -66,14 +61,14 @@ public class Node extends AirportComponent
                 
                 if(l instanceof Gate)
                 {
-                    incomingPlow1.addTerm(1, l.y1_ij);
+                    incomingPlow1.addTerm(1, l.y1_ji);
                 }
             }
             cplex.addEq(incomingPlow1, outgoingPlow1);
         }
         if (Airport.enable_x2) {
             for (Link l : getIncoming()) {
-                incomingPlow3.addTerm(1, l.y2_ij);
+                incomingPlow3.addTerm(1, l.y2_ji);
                 
                 if(l instanceof Gate)
                 {
@@ -85,10 +80,17 @@ public class Node extends AirportComponent
                 
                 if(l instanceof Gate)
                 {
-                    incomingPlow3.addTerm(1, l.y2_ij);
+                    incomingPlow3.addTerm(1, l.y2_ji);
                 }
             }
             cplex.addEq(incomingPlow3, outgoingPlow3);
+        }
+        
+        // runways are handled separately in the runway class
+        
+        if(isRunway())
+        {
+            return;
         }
         
         for(Link l : getIncoming())

@@ -478,17 +478,20 @@ public class Airport
         for (Runway r : runways) {
             for(RunwayLink l : r.getLinks()) {
                 AR1.addTerm(l.getArea(), l.y1_ij);
+                AR1.addTerm(l.getArea(), l.y1_ji);
             }
         }
         //calculate taxiway area
         IloLinearNumExpr AT1 = cplex.linearNumExpr();
         for(Taxiway t : taxiways) {
             AT1.addTerm(t.getArea(), t.y1_ij);
+            AT1.addTerm(t.getArea(), t.y1_ji);
         }
         //calculate gate area
         IloLinearNumExpr AG1 = cplex.linearNumExpr();
         for(Gate g : gates) {
             AG1.addTerm(g.getArea(), g.y1_ij);
+            AG1.addTerm(g.getArea(), g.y1_ji);
         }
 
         //Runway pavement:
@@ -556,6 +559,7 @@ public class Airport
             for(RunwayLink l : r.getLinks())
             {
                 AR2.addTerm(l.getArea(), l.y2_ij);
+                AR2.addTerm(l.getArea(), l.y2_ji);
             }
         }
 
@@ -564,6 +568,7 @@ public class Airport
         for(Taxiway t : taxiways)
         {
             AT2.addTerm(t.getArea(), t.y2_ij);
+            AT2.addTerm(t.getArea(), t.y2_ji);
         }
 
         IloLinearNumExpr AG2 = cplex.linearNumExpr();
@@ -571,6 +576,7 @@ public class Airport
         for(Gate g : gates)
         {
             AG2.addTerm(g.getArea(), g.y2_ij);
+            AG2.addTerm(g.getArea(), g.y2_ji);
         }
 
         //Runway area:
@@ -798,18 +804,20 @@ public class Airport
             System.out.println(entry.getKey() + " y2_ij: " + cplex.getValue(l.y2_ij) + " x2: " + cplex.getValue(l.x_2));
         }
 
-        System.out.println("Gates\tx\tflow_in\tflow_out");
+        System.out.println("Gates\tx\ty_ij\ty_ji\tflow_in\tflow_out");
         for(Gate g : gates)
         {
             System.out.println(g+"\t"+String.format("%.0f", cplex.getValue(g.x))
+                    +"\t"+String.format("%.0f", cplex.getValue(g.y1_ij))+"\t"+String.format("%.0f", cplex.getValue(g.y1_ji))
                     +"\t"+String.format("%.1f", cplex.getValue(g.flow_ji))+"\t"+String.format("%.1f", cplex.getValue(g.flow_ij)));
         }
 
 
-        System.out.println("\nTaxiways\tx\tflow_in\tflow_out");
+        System.out.println("\nTaxiways\tx\ty_ij\ty_ji\tflow_in\tflow_out");
         for(Taxiway t : taxiways)
         {
-            System.out.println(t+"\t"+String.format("%.0f", cplex.getValue(t.x))
+            System.out.println(t+"\t\t"+String.format("%.0f", cplex.getValue(t.x))
+                    +"\t"+String.format("%.0f", cplex.getValue(t.y1_ij))+"\t"+String.format("%.0f", cplex.getValue(t.y1_ji))
                     +"\t"+String.format("%.1f", cplex.getValue(t.flow_ij))+"\t"+String.format("%.1f", cplex.getValue(t.flow_ji)));
         }
 
