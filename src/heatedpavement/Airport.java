@@ -800,8 +800,8 @@ public class Airport
         System.out.println();
         for (Map.Entry<String, Link> entry : lookupLink.entrySet()) {
             Link l = entry.getValue();
-            System.out.println(entry.getKey() + " y1_ij: " + cplex.getValue(l.y1_ij) + " x1: " + cplex.getValue(l.x_1));
-            System.out.println(entry.getKey() + " y2_ij: " + cplex.getValue(l.y2_ij) + " x2: " + cplex.getValue(l.x_2));
+            System.out.println(entry.getKey() + " y1_ij: " + cplex.getValue(l.y1_ij) + " y1_ji: " + cplex.getValue(l.y1_ji) +" x1: " + cplex.getValue(l.x_1));
+            System.out.println(entry.getKey() + " y2_ij: " + cplex.getValue(l.y2_ij) + " y2_ji: " + cplex.getValue(l.y2_ji) +" x2: " + cplex.getValue(l.x_2));
         }
 
         System.out.println("Gates\tx\ty_ij\ty_ji\tflow_in\tflow_out");
