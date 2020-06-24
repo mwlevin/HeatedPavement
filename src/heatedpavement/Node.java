@@ -43,9 +43,9 @@ public class Node extends AirportComponent
         // conservation of flow for snowplow paths
         IloLinearNumExpr lhs = cplex.linearNumExpr();
         IloLinearNumExpr incomingPlow1 = cplex.linearNumExpr();
-        IloLinearNumExpr incomingPlow3 = cplex.linearNumExpr();
+        IloLinearNumExpr incomingPlow2 = cplex.linearNumExpr();
         IloLinearNumExpr outgoingPlow1 = cplex.linearNumExpr();
-        IloLinearNumExpr outgoingPlow3 = cplex.linearNumExpr();
+        IloLinearNumExpr outgoingPlow2 = cplex.linearNumExpr();
         // this is node i
         if (Airport.enable_x1) {
             for (Link l : getIncoming()) {
@@ -70,24 +70,24 @@ public class Node extends AirportComponent
         }
         if (Airport.enable_x2) {
             for (Link l : getIncoming()) {
-                incomingPlow3.addTerm(1, l.y2_ji);
-                outgoingPlow3.addTerm(1, l.y2_ij);
+                incomingPlow2.addTerm(1, l.y2_ji);
+                outgoingPlow2.addTerm(1, l.y2_ij);
                 
                 if(l instanceof Gate)
                 {
-                    outgoingPlow3.addTerm(1, l.y2_ji);
+                    outgoingPlow2.addTerm(1, l.y2_ji);
                 }
             }
             for (Link l : getOutgoing()) {
-                outgoingPlow3.addTerm(1, l.y2_ij);
-                incomingPlow1.addTerm(1, l.y2_ji);
+                outgoingPlow2.addTerm(1, l.y2_ij);
+                incomingPlow2.addTerm(1, l.y2_ji);
                 
                 if(l instanceof Gate)
                 {
-                    incomingPlow3.addTerm(1, l.y2_ij);
+                    incomingPlow2.addTerm(1, l.y2_ij);
                 }
             }
-            cplex.addEq(incomingPlow3, outgoingPlow3);
+            cplex.addEq(incomingPlow2, outgoingPlow2);
         }
         
         // runways are handled separately in the runway class

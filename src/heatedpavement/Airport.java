@@ -29,9 +29,9 @@ public class Airport
 {
     // enable x_1, x_2, x_3
     public static final boolean enable_x1 = true;
-    public static final boolean enable_x2 = false;
-    public static final boolean enable_x3 = false;
-    public static final boolean enable_all = false;
+    public static final boolean enable_x2 = true;
+    public static final boolean enable_x3 = true;
+    public static final boolean enable_all = true;
 
     // define the runways in 1 direction only please
 
@@ -547,9 +547,7 @@ public class Airport
         //**METHOD 2: autonomous snowplows and deicing fluid**
         //----------------------------------
         // objective function -> cost models
-
         // this is for x_2, autonomous vehicles
-
         // Life Cycle: 15 years
         
         IloLinearNumExpr AR2 = cplex.linearNumExpr();
@@ -582,69 +580,51 @@ public class Airport
         //Runway area:
         // ER_Req = ceil((AR2/ATR)*ER + (AR2/A)*EB);        // required
         // *** ? should the second term be AG/ATG * EG?
-
         // make this an IloIntVar, and make the constraint GE to convert to integer variable
         IloIntVar ER_Req2 = cplex.intVar(0, (int) INFTY);
         cplex.addGe(ER_Req2, cplex.sum(cplex.prod(AR2, 1.0/ATR*ER), cplex.prod(AR2, 1.0/A*EB)));
-
-
         // PR_Req2 = ceil((ER_Req2/E)*PR);                // personnel required for runway operations
         IloIntVar PR_Req2 = cplex.intVar(0, (int) INFTY);
         cplex.addGe(PR_Req2, cplex.prod(ER_Req2, PR/E));
         // DeiceR_Req2 = (AR/A)*Deice;                  // gal/year deice required for runway
         IloNumVar DeiceR_Req2 = cplex.numVar(0, INFTY);
         cplex.addEq(DeiceR_Req2, cplex.prod(AR2, Deice/A));
-
         //CRP2 = (CPM*PR_Req2*(PM/P))+(CPR*PR_Req2*(PR/P));      // annual cost of personnel for runway operations
         IloNumVar CRP2 = cplex.numVar(0, INFTY);
         cplex.addEq(CRP2, cplex.prod(PR_Req2, CPM*PM/P + CPR*PR/P));
-
         //CRE2 = ((AR2/A)*EB*(CEB) + (AR2/ATR)*ER*(CER)) * MF2 * ACF ;        //life time cost of equipment and maintance
         IloNumVar CRE2 = cplex.numVar(0, INFTY);
         cplex.addEq(CRE2, cplex.prod(cplex.prod(cplex.sum(cplex.prod(AR2, EB*CEB/A), cplex.prod(AR2, ER*CER/ATR)), MF), ACF));
-
         //CRD2 = (DeiceR_Req2)* 25;                             // annual cost of deicing material
         IloNumVar CRD2 = cplex.numVar(0, INFTY);
         cplex.addEq(CRD2, cplex.prod(DeiceR_Req2, 25));
-
         //CR_Total2 = 15*(CRP2+CRD2) + CRE2;                      // total cost for life cycle for runway pavement
         IloNumVar CR_Total2 = cplex.numVar(0, INFTY);
         cplex.addEq(CR_Total2, cplex.sum(cplex.prod(LC, cplex.sum(CRP2, CRD2)), CRE2));
 
         //// Gate Area
-
         //EG_Req2 = ceil((AG2/ATG)*EG + (AG2/A)*EB);        // required equipment for gate operations, assume same efficiency as current equipment
         IloIntVar EG_Req2 = cplex.intVar(0, (int) INFTY);
         cplex.addGe(EG_Req2, cplex.sum(cplex.prod(AG2, EG/ATG), cplex.prod(AG2, EB/A)));
-        cplex.addLe(EG_Req2, cplex.sum(cplex.sum(cplex.prod(AG2, EG/ATG), cplex.prod(AG2, EB/A)), 1));
-
+        ///////cplex.addLe(EG_Req2, cplex.sum(cplex.sum(cplex.prod(AG2, EG/ATG), cplex.prod(AG2, EB/A)), 1));
         //PG_Req2 = ceil((EG_Req2/E)*PR);                // personnel required for gate operations
         IloIntVar PG_Req2 = cplex.intVar(0, (int) INFTY);
         cplex.addGe(PG_Req2, cplex.prod(EG_Req2, PR/E));
-
         //DeiceG_Req2 = (AG2/A)*Deice;                  // gal/year deice required for gates
         IloNumVar DeiceG_Req2 = cplex.numVar(0, INFTY);
         cplex.addEq(DeiceG_Req2, cplex.prod(AG2, Deice/A));
-
         //CGP2 = CPR*PG_Req2;                            // annual cost of personnel for gate operations
         IloNumVar CGP2 = cplex.numVar(0, INFTY);
         cplex.addEq(CGP2, cplex.prod(CPR, PG_Req2));
-
         //CGE2 = ((AG2/A)*EB*(CEB) + (AG2/ATG)*EG*(CEG)) * MF2 * ACF;        //life time cost of equipment and maintance
         IloNumVar CGE2 = cplex.numVar(0, INFTY);
         cplex.addEq(CGE2, cplex.prod(cplex.prod(cplex.sum(cplex.prod(AG2, EB*CEB/A), cplex.prod(AG2, EG*CEG/ATG)), MF), ACF));
-
         //CGD2 = (DeiceG_Req2)* 25;                             // annual cost of deicing material
         IloNumVar CGD2 = cplex.numVar(0, INFTY);
         cplex.addEq(CGD2, cplex.prod(DeiceG_Req2, 25));
-
         //CG_Total = 15*(CGP+CGD) + CGE;                      // total cost for life cycle for gate pavement
         IloNumVar CG_Total2 = cplex.numVar(0, INFTY);
         cplex.addEq(CG_Total2, cplex.sum(cplex.prod(LC, cplex.sum(CGP2, CGD2)), CGE2));
-
-        
-        
-
 
         //----------------------------------
         //**METHOD 3: heated pavements**
@@ -731,19 +711,6 @@ public class Airport
         IloNumVar CG_Total3 = cplex.numVar(0, INFTY);
         cplex.addEq(CG_Total3, cplex.sum(cplex.prod(15, cplex.sum(CGP3, CGEE3)), cplex.sum(CGHP3, CGE3)));
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         IloLinearNumExpr obj = cplex.linearNumExpr();
         obj.addTerm(1, CR_Total1);
         obj.addTerm(1, CG_Total1);
@@ -759,8 +726,7 @@ public class Airport
         }
 
         cplex.addMinimize(obj);
-        
-        
+
 
         cplex.solve();
         for (Map.Entry<String, Link> entry : lookupLink.entrySet()) {
