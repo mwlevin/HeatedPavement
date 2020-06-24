@@ -50,6 +50,7 @@ public class Node extends AirportComponent
         if (Airport.enable_x1) {
             for (Link l : getIncoming()) {
                 incomingPlow1.addTerm(1, l.y1_ji);
+                outgoingPlow1.addTerm(1, l.y1_ij);
                 
                 if(l instanceof Gate)
                 {
@@ -58,6 +59,7 @@ public class Node extends AirportComponent
             }
             for (Link l : getOutgoing()) {
                 outgoingPlow1.addTerm(1, l.y1_ij);
+                incomingPlow1.addTerm(1, l.y1_ji);
                 
                 if(l instanceof Gate)
                 {
