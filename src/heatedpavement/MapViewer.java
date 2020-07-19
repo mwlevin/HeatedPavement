@@ -76,47 +76,49 @@ public class MapViewer extends JMapViewer
         
         Coordinate startDisplay = new Coordinate(44.8830, -93.2230);
         setDisplayPosition(startDisplay, 14);
-    }
-
-    
+    } 
     
     public void setScale(int scale)
     {
         this.scale = scale;
     }
     
-
-    
     public void center(Coordinate c)
     {
         setDisplayPosition(new Point(getWidth()/2, getHeight()/2), c, getZoom());
     }
     
-    
-
-    
     public void setZoomControlsVisible(boolean visible) {
         super.setZoomContolsVisible(visible);
     }
     
-    protected Color yColor(Link l, double y) {
-        if (y == 0) { //=0, blue
-            Color min = new Color(38, 84, 124);
+    //Selecting a color based on y value
+    protected Color yColor(double y) {
+        if (y == 0) { //=0, gray
+            Color min = new Color(61, 61, 61);
             return min;
         }
-        if (y > 0 && y < 4) { //1-3, pink/red
-            Color middle1 = new Color(239, 71, 111);
-            return middle1;
+        if (y == 1) { //=1, purple
+            Color one = new Color(153, 51, 155);
+            return one;
+        }
+        if (y == 2) { //=2, green
+            Color two = new Color(6, 215, 160);
+            return two;
+        }
+        if (y == 3) { //=3, red
+            Color three = new Color(239, 71, 111);
+            return three;
         }
         if (y > 3 && y < 8) { //4-7, yellow
             Color middle2 = new Color(255, 209, 102);
             return middle2;
         }
-        if (y > 7 && y < 12) { //8-11, green
-            Color middle3 = new Color(6, 215, 160);
+        if (y > 7 && y < 12) { //8-11, orange
+            Color middle3 = new Color(255, 126, 62);
             return middle3;
         }
-        Color max = new Color(61, 61, 61); //>11, gray
+        Color max = new Color(38, 84, 124); //>11, blue
         return max;
     }
     
@@ -124,16 +126,15 @@ public class MapViewer extends JMapViewer
         Graphics2D g = (Graphics2D)window;
         super.paintComponent(g);
         
-        boolean colorcodeY = true; //boolean to see if we should color code based on y or x
+        boolean colorcodeY = false; //boolean to see if we should color code based on y or x
         boolean lookAtY1 = false; //color code based on only y1 values
-        boolean lookAtY2 = true; //color code based on only y2 values
-        boolean lookAtBoth = false; //color code based on sum y1+y2.
+        boolean lookAtY2 = false; //color code based on only y2 values
+        boolean lookAtBoth = true; //color code based on sum y1+y2.
                                     //If this is true, lookAtY1 and lookAtY2 should be false
         g.setStroke(new BasicStroke(5));
         Airport airport = null;
-        //drawing color coded lines according to x values
         try {
-            airport = new Airport("MSP_nw"); //change this to change the airport
+            airport = new Airport("MSP_temp"); //change this to change the airport
             airport.solveCplex();
         }
         catch (Exception e) {
@@ -146,26 +147,26 @@ public class MapViewer extends JMapViewer
                 //System.out.println("y1: " + l.value_y1);
                 //System.out.println("y2: " + l.value_y2);
                 if (lookAtY1) {
-                    g.setColor(yColor(l, l.value_y1));
+                    g.setColor(yColor(l.value_y1));
                 }
                 if (lookAtY2) {
-                    g.setColor(yColor(l, l.value_y2));
+                    g.setColor(yColor(l.value_y2));
                 }
                 if (lookAtBoth) {
-                    g.setColor(yColor(l, l.value_yBoth));
+                    g.setColor(yColor(l.value_yBoth));
                 }
             }
             else {
                 //System.out.println("x1: " + l.value_x1);
                 //System.out.println("x2: " + l.value_x2);
                 //System.out.println("x3: " + l.value_x3);
-                if (l.value_x1 == 1) {
+                if (l.value_y1 > 0) {
                     g.setColor(Color.red);
                 }
-                if (l.value_x2 == 1) {
+                if (l.value_y2 > 0) {
                     g.setColor(Color.green);
                 }
-                if (l.value_x3 == 1) {
+                if (l.value_x3 > 0) {
                     g.setColor(Color.blue);
                 }  
             }
@@ -177,45 +178,48 @@ public class MapViewer extends JMapViewer
         //drawing gates
         Scanner in = null;
         try {
-           in = new Scanner(new File("airports/MSP_nw/gate_coordinates.txt")); 
+           in = new Scanner(new File("airports/MSP_temp/gate_coordinates.txt")); 
         }
         catch (Exception e) {
             System.out.println("exception caught");
         }
-        in.nextLine();
-        while (in.hasNext()) {
-            g.setColor(Color.black);
-            in.next();
-            double latitude = in.nextDouble();
-            double longitude = in.nextDouble();
-            Coordinate coordinate = new Coordinate(latitude, longitude);
-            Point gate = getMapPosition(coordinate, false);
-            for (Gate gates : airport.gates) {
-                if (colorcodeY) {
-                    if (lookAtY1) {
-                        g.setColor(yColor(gates, gates.value_y1));
+        if (in != null) {
+            in.nextLine();
+            while (in.hasNext()) {
+                g.setColor(Color.black);
+                in.next();
+                double latitude = in.nextDouble();
+                double longitude = in.nextDouble();
+                Coordinate coordinate = new Coordinate(latitude, longitude);
+                Point gate = getMapPosition(coordinate, false);
+                for (Gate gates : airport.gates) {
+                    if (colorcodeY) {
+                        if (lookAtY1) {
+                            g.setColor(yColor(gates.value_y1));
+                        }
+                        if (lookAtY2) {
+                            g.setColor(yColor(gates.value_y2));
+                        }
+                        if (lookAtBoth) {
+                            g.setColor(yColor(gates.value_yBoth));
+                        }
                     }
-                    if (lookAtY2) {
-                        g.setColor(yColor(gates, gates.value_y2));
-                    }
-                    if (lookAtBoth) {
-                        g.setColor(yColor(gates, gates.value_yBoth));
+                    else {
+                        if (gates.value_y1 > 0) {
+                            g.setColor(Color.red);
+                        }
+                        if (gates.value_y2 > 0) {
+                            g.setColor(Color.green);
+                        }
+                        if (gates.value_x3 > 0) {
+                            g.setColor(Color.blue);
+                        }
                     }
                 }
-                else {
-                    if (gates.value_x1 == 1) {
-                        g.setColor(Color.red);
-                    }
-                    if (gates.value_x2 == 1) {
-                        g.setColor(Color.white);
-                    }
-                    if (gates.value_x3 == 1) {
-                        g.setColor(Color.blue);
-                    }
-                }
-            }
             g.drawOval(gate.x, gate.y, 2, 2);
+            }
         }
+        
     }
     
     public void paintText(Graphics g, String name, Point position, int radius) {

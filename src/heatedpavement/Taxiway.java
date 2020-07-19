@@ -8,6 +8,8 @@ package heatedpavement;
 import ilog.concert.IloException;
 import ilog.concert.IloNumVar;
 import ilog.cplex.IloCplex;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -16,26 +18,34 @@ import ilog.cplex.IloCplex;
 public class Taxiway extends Link
 {
     
-    protected IloNumVar flow_ij, flow_ji;
+    protected Map<Configuration, IloNumVar> flow_ij, flow_ji;
+    //protected IloNumVar flow_ij, flow_ji;
     
     public Taxiway(String name, Node source, Node dest, double area)
     {
         super(name, source, dest, area);
+        //flow_ij = new HashMap<>();
+       // flow_ji = new HashMap<>();
     }
     
     public void addConstraints(IloCplex cplex) throws IloException
     {
         super.addConstraints(cplex);
         
-        flow_ij = cplex.numVar(0, 100000);
-        flow_ji = cplex.numVar(0, 100000);
-        
-        
-        
         double capacity = getCapacity();
+        flow_ij = new HashMap<>();
+        flow_ji = new HashMap<>();
         
-        cplex.addLe(flow_ij, cplex.prod(x, capacity));
-        cplex.addLe(flow_ji, cplex.prod(x, capacity));
+        for (Configuration c : Airport.configurations) {
+            flow_ij.put(c, cplex.numVar(0, 100000));
+            cplex.addLe(flow_ij.get(c), cplex.prod(x, capacity));
+            flow_ji.put(c, cplex.numVar(0, 100000));
+            cplex.addLe(flow_ji.get(c), cplex.prod(x, capacity));
+        }
+        //flow_ij = cplex.numVar(0, 100000);
+        //flow_ji = cplex.numVar(0, 100000);
+        //cplex.addLe(flow_ij, cplex.prod(x, capacity));
+        //cplex.addLe(flow_ji, cplex.prod(x, capacity));
     }
     
     public Type getType()

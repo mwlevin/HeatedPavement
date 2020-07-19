@@ -17,7 +17,7 @@ public abstract class AirportComponent
     public static enum Type {runway, taxiway, gate, none};
     //public static char size; // A--F
     
-    private String name;
+    protected String name;
     
     public AirportComponent(String name)
     {

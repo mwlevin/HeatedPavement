@@ -7,8 +7,10 @@ package heatedpavement;
 
 import ilog.concert.IloException;
 import ilog.concert.IloIntVar;
+import ilog.concert.IloLinearNumExpr;
 import ilog.concert.IloNumVar;
 import ilog.cplex.IloCplex;
+import java.util.Map;
 
 /**
  *

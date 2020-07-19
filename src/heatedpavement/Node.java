@@ -7,9 +7,11 @@ package heatedpavement;
 
 import ilog.concert.IloException;
 import ilog.concert.IloLinearNumExpr;
+import ilog.concert.IloNumVar;
 import ilog.cplex.IloCplex;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.openstreetmap.gui.jmapviewer.Coordinate;
 
 /**
@@ -19,7 +21,7 @@ import org.openstreetmap.gui.jmapviewer.Coordinate;
 public class Node extends AirportComponent
 {
     
-    private List<Link> incoming, outgoing;
+    protected List<Link> incoming, outgoing;
     protected Coordinate coordinates;
     
     public Node(String name)
@@ -32,13 +34,7 @@ public class Node extends AirportComponent
     
     public void addConstraints(IloCplex cplex) throws IloException
     {
-        
-        
         super.addConstraints(cplex);
-        
-        
-        
-        //System.out.println(getName());
         
         // conservation of flow for snowplow paths
         IloLinearNumExpr lhs = cplex.linearNumExpr();
@@ -103,8 +99,14 @@ public class Node extends AirportComponent
             
             // flow_ij is incoming
             // flow_ji is outgoing
-            lhs.addTerm(1, ij.flow_ij);
-            lhs.addTerm(-1, ij.flow_ji);
+            for (Map.Entry<Configuration, IloNumVar> entry : ij.flow_ij.entrySet()) {
+                lhs.addTerm(1, entry.getValue());
+            }
+            for (Map.Entry<Configuration, IloNumVar> entry : ij.flow_ji.entrySet()) {
+                lhs.addTerm(-1, entry.getValue());
+            }
+            //lhs.addTerm(1, ij.flow_ij);
+            //lhs.addTerm(-1, ij.flow_ji);
         }
         
         
@@ -114,8 +116,14 @@ public class Node extends AirportComponent
             
             // flow_ij is outgoing
             // flow_ji is incoming
-            lhs.addTerm(-1, ij.flow_ij);
-            lhs.addTerm(1, ij.flow_ji);
+            for (Map.Entry<Configuration, IloNumVar> entry : ij.flow_ij.entrySet()) {
+                lhs.addTerm(-1, entry.getValue());
+            }
+            for (Map.Entry<Configuration, IloNumVar> entry : ij.flow_ji.entrySet()) {
+                lhs.addTerm(1, entry.getValue());
+            }
+            //lhs.addTerm(-1, ij.flow_ij);
+            //lhs.addTerm(1, ij.flow_ji);
         }
         
         cplex.addEq(lhs, 0);
