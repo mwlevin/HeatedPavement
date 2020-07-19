@@ -900,7 +900,7 @@ public class Airport
         obj.addTerm(1, CR_Total3);
         obj.addTerm(1, CG_Total3);
                 
-        /*
+        
         for(Taxiway t : taxiways)
         {
             for (Map.Entry<Configuration, IloNumVar> entry : t.dep_flow_ij.entrySet()) {
@@ -919,7 +919,7 @@ public class Airport
             //obj.addTerm(0.001, t.flow_ij);
             //obj.addTerm(0.001, t.flow_ji);
         }
-        */
+        
 
         cplex.addMinimize(obj);
 
