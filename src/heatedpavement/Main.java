@@ -18,8 +18,9 @@ public class Main {
      */
     public static void main(String[] args) throws Exception
     {
-        Airport test = new Airport("MSP_temp");
-        test.solveCplex();
+        MapViewer.main(args);
+        //Airport test = new Airport("MSP_temp");
+        //test.solveCplex();
     }
     
 }
