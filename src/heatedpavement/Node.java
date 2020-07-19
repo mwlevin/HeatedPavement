@@ -6,6 +6,7 @@
 package heatedpavement;
 
 import ilog.concert.IloException;
+import ilog.concert.IloIntVar;
 import ilog.concert.IloLinearNumExpr;
 import ilog.concert.IloNumVar;
 import ilog.cplex.IloCplex;
@@ -24,6 +25,11 @@ public class Node extends AirportComponent
     protected List<Link> incoming, outgoing;
     protected Coordinate coordinates;
     
+    protected IloIntVar z1, z2;
+    
+    protected boolean snowplow_parking = false;
+    
+    
     public Node(String name)
     {
         super(name);
@@ -32,9 +38,67 @@ public class Node extends AirportComponent
         this.coordinates = null;
     }
     
+    public void createVariables(IloCplex cplex) throws IloException
+    {
+        super.createVariables(cplex);
+        
+        /*
+        z1 = cplex.intVar(0, 1);
+        z2 = cplex.intVar(0, 1);
+        */
+    }
+    
     public void addConstraints(IloCplex cplex) throws IloException
     {
         super.addConstraints(cplex);
+        
+        /*
+        if(!snowplow_parking)
+        {
+            IloLinearNumExpr lhs = cplex.linearNumExpr();
+            
+            
+            if(Airport.enable_x1)
+            {
+                for(Link l : getIncoming())
+                {
+                    lhs.addTerm(1, l.y1_ij);
+                    lhs.addTerm(1, l.y1_ji);
+                }
+
+                for(Link l : getOutgoing())
+                {
+                    lhs.addTerm(1, l.y1_ij);
+                    lhs.addTerm(1, l.y1_ji);
+                }
+
+                cplex.addLe(z1, lhs);
+                cplex.addLe(lhs, cplex.prod(z1, 1000));
+            }
+            
+            if(Airport.enable_x2)
+            {
+                lhs = cplex.linearNumExpr();
+            
+                for(Link l : getIncoming())
+                {
+                    lhs.addTerm(1, l.y2_ij);
+                    lhs.addTerm(1, l.y2_ji);
+                }
+
+                for(Link l : getOutgoing())
+                {
+                    lhs.addTerm(1, l.y2_ij);
+                    lhs.addTerm(1, l.y2_ji);
+                }
+
+                cplex.addLe(z2, lhs);
+                cplex.addLe(lhs, cplex.prod(z2, 100));
+            }
+        }
+        */
+        
+
         
         // conservation of flow for snowplow paths
         IloLinearNumExpr lhs = cplex.linearNumExpr();
@@ -44,6 +108,8 @@ public class Node extends AirportComponent
         IloLinearNumExpr outgoingPlow2 = cplex.linearNumExpr();
         // this is node i
         if (Airport.enable_x1) {
+            
+            
             for (Link l : getIncoming()) {
                 incomingPlow1.addTerm(1, l.y1_ji);
                 outgoingPlow1.addTerm(1, l.y1_ij);
@@ -88,21 +154,25 @@ public class Node extends AirportComponent
         
         // runways are handled separately in the runway class
         
-        if(isRunway())
+        if(isRunway)
         {
             return;
         }
         
         for(Link l : getIncoming())
         {
+            if(!(l instanceof Taxiway))
+            {
+                continue;
+            }
             Taxiway ij = (Taxiway)l;
             
             // flow_ij is incoming
             // flow_ji is outgoing
-            for (Map.Entry<Configuration, IloNumVar> entry : ij.flow_ij.entrySet()) {
+            for (Map.Entry<Configuration, IloNumVar> entry : ij.arr_flow_ij.entrySet()) {
                 lhs.addTerm(1, entry.getValue());
             }
-            for (Map.Entry<Configuration, IloNumVar> entry : ij.flow_ji.entrySet()) {
+            for (Map.Entry<Configuration, IloNumVar> entry : ij.arr_flow_ji.entrySet()) {
                 lhs.addTerm(-1, entry.getValue());
             }
             //lhs.addTerm(1, ij.flow_ij);
@@ -112,14 +182,64 @@ public class Node extends AirportComponent
         
         for(Link l : getOutgoing())
         {
+            if(!(l instanceof Taxiway))
+            {
+                continue;
+            }
             Taxiway ij = (Taxiway)l;
             
             // flow_ij is outgoing
             // flow_ji is incoming
-            for (Map.Entry<Configuration, IloNumVar> entry : ij.flow_ij.entrySet()) {
+            for (Map.Entry<Configuration, IloNumVar> entry : ij.arr_flow_ij.entrySet()) {
                 lhs.addTerm(-1, entry.getValue());
             }
-            for (Map.Entry<Configuration, IloNumVar> entry : ij.flow_ji.entrySet()) {
+            for (Map.Entry<Configuration, IloNumVar> entry : ij.arr_flow_ji.entrySet()) {
+                lhs.addTerm(1, entry.getValue());
+            }
+            //lhs.addTerm(-1, ij.flow_ij);
+            //lhs.addTerm(1, ij.flow_ji);
+        }
+        
+        cplex.addEq(lhs, 0);
+        
+        
+        lhs = cplex.linearNumExpr();
+        
+        for(Link l : getIncoming())
+        {
+            if(!(l instanceof Taxiway))
+            {
+                continue;
+            }
+            Taxiway ij = (Taxiway)l;
+            
+            // flow_ij is incoming
+            // flow_ji is outgoing
+            for (Map.Entry<Configuration, IloNumVar> entry : ij.dep_flow_ij.entrySet()) {
+                lhs.addTerm(1, entry.getValue());
+            }
+            for (Map.Entry<Configuration, IloNumVar> entry : ij.dep_flow_ji.entrySet()) {
+                lhs.addTerm(-1, entry.getValue());
+            }
+            //lhs.addTerm(1, ij.flow_ij);
+            //lhs.addTerm(-1, ij.flow_ji);
+        }
+        
+        
+        for(Link l : getOutgoing())
+        {
+            if(!(l instanceof Taxiway))
+            {
+                continue;
+            }
+            Taxiway ij = (Taxiway)l;
+            
+            // flow_ij is outgoing
+            // flow_ji is incoming
+            for (Map.Entry<Configuration, IloNumVar> entry : ij.dep_flow_ij.entrySet()) {
+                lhs.addTerm(-1, entry.getValue());
+            }
+            for (Map.Entry<Configuration, IloNumVar> entry : ij.dep_flow_ji.entrySet()) {
                 lhs.addTerm(1, entry.getValue());
             }
             //lhs.addTerm(-1, ij.flow_ij);
@@ -129,26 +249,7 @@ public class Node extends AirportComponent
         cplex.addEq(lhs, 0);
     }
     
-    private boolean isRunway()
-    {
-        for(Link i : getIncoming())
-        {
-            if(i instanceof RunwayLink)
-            {
-                return true;
-            }
-        }
-        
-        for(Link i : getOutgoing())
-        {
-            if(i instanceof RunwayLink)
-            {
-                return true;
-            }
-        }
-        
-        return false;
-    }
+    protected boolean isRunway;
     
     public List<Link> getIncoming()
     {

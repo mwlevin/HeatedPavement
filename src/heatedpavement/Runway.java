@@ -32,12 +32,23 @@ public class Runway extends AirportComponent
     
     protected Map<Configuration, IloNumVar> departing_flow, arriving_flow;
     
+    
     public Runway(String name, List<RunwayLink> links, List<Node> entering, List<Node> exiting)
     {
         super(name);
         this.links = links;
         this.entering = entering;
         this.exiting = exiting;
+        
+        for(Node n : entering)
+        {
+            n.isRunway = true;
+        }
+        
+        for(Node n : exiting)
+        {
+            n.isRunway = true;
+        }
     }
     
     
@@ -45,10 +56,13 @@ public class Runway extends AirportComponent
     {
         departing_flow = new HashMap<>();
         arriving_flow = new HashMap<>();
+
+        
         x = cplex.intVar(0, 1);
         for (Configuration c : Airport.configurations) {
             departing_flow.put(c, cplex.numVar(0, 100000));
             arriving_flow.put(c, cplex.numVar(0, 100000));
+
         }
         //departing_flow = cplex.numVar(0, 100000);
         //arriving_flow = cplex.numVar(0, 100000);
@@ -112,136 +126,237 @@ public class Runway extends AirportComponent
         
         
         // conservation of flow: entering traffic = departing traffic, more or less
-        rhs = cplex.linearNumExpr(); // difference between entering and exiting at each node
         
+        
+        
+        Node main_dep = entering.get(0);
         
         for(Node n : entering)
         {
-            for(Link l : n.getIncoming())
+            for(Configuration c : departing_flow.keySet())
             {
-                if(l instanceof Taxiway)
+                rhs = cplex.linearNumExpr(); // difference between entering and exiting at each node
+
+                if(n == main_dep)
                 {
-                    Taxiway ij = (Taxiway)l;
-                    for (Map.Entry<Configuration, IloNumVar> entry : ij.flow_ij.entrySet()) {
-                        rhs.addTerm(1, entry.getValue());
+                    rhs.addTerm(-1, departing_flow.get(c));
+                }
+                
+                for(Link l : n.getIncoming())
+                {
+                    if(l instanceof Taxiway)
+                    {
+                        Taxiway ij = (Taxiway)l;
+                        rhs.addTerm(1, ij.dep_flow_ij.get(c));
+                        rhs.addTerm(-1, ij.dep_flow_ji.get(c));
+                        
+                        //rhs.addTerm(1, ij.flow_ij); // ij is incoming flow
+                        //rhs.addTerm(-1, ij.flow_ji); // ji is outgoing flow
                     }
-                    for (Map.Entry<Configuration, IloNumVar> entry : ij.flow_ji.entrySet()) {
-                        rhs.addTerm(-1, entry.getValue());
+                }
+
+                for(Link l : n.getOutgoing())
+                {
+                    if(l instanceof Taxiway)
+                    {
+                        Taxiway ji = (Taxiway)l;
+                        rhs.addTerm(-1, ji.dep_flow_ij.get(c));
+                        rhs.addTerm(1, ji.dep_flow_ji.get(c));
+                        
+                        //rhs.addTerm(-1, ji.flow_ij); // ij is outgoing flow
+                        //rhs.addTerm(1, ji.flow_ji); // ji is incoming flow
                     }
-                    //rhs.addTerm(1, ij.flow_ij); // ij is incoming flow
-                    //rhs.addTerm(-1, ij.flow_ji); // ji is outgoing flow
+                }
+            
+            
+            cplex.addEq(rhs, 0);
+            
+                 
+            
+                rhs = cplex.linearNumExpr(); // difference between entering and exiting at each node
+
+
+                for(Link l : n.getIncoming())
+                {
+                    if(l instanceof Taxiway)
+                    {
+                        Taxiway ij = (Taxiway)l;
+                        rhs.addTerm(1, ij.arr_flow_ij.get(c));
+                        rhs.addTerm(-1, ij.arr_flow_ji.get(c));
+                        
+                        //rhs.addTerm(1, ij.flow_ij); // ij is incoming flow
+                        //rhs.addTerm(-1, ij.flow_ji); // ji is outgoing flow
+                    }
+                }
+
+                for(Link l : n.getOutgoing())
+                {
+                    if(l instanceof Taxiway)
+                    {
+                        Taxiway ji = (Taxiway)l;
+                        rhs.addTerm(-1, ji.arr_flow_ij.get(c));
+                        rhs.addTerm(1, ji.arr_flow_ji.get(c));
+                        
+                        //rhs.addTerm(-1, ji.flow_ij); // ij is outgoing flow
+                        //rhs.addTerm(1, ji.flow_ji); // ji is incoming flow
+                    }
                 }
             }
             
-            for(Link l : n.getOutgoing())
-            {
-                if(l instanceof Taxiway)
-                {
-                    Taxiway ji = (Taxiway)l;
-                    for (Map.Entry<Configuration, IloNumVar> entry : ji.flow_ij.entrySet()) {
-                        rhs.addTerm(-1, entry.getValue());
-                    }
-                    for (Map.Entry<Configuration, IloNumVar> entry : ji.flow_ji.entrySet()) {
-                        rhs.addTerm(1, entry.getValue());
-                    }
-                    //rhs.addTerm(-1, ji.flow_ij); // ij is outgoing flow
-                    //rhs.addTerm(1, ji.flow_ji); // ji is incoming flow
-                }
-            }
-            
+            cplex.addEq(rhs, 0);
+
         }
         
-        for (Map.Entry<Configuration, IloNumVar> entry : departing_flow.entrySet()) {
-            boolean found = false;
-            for (Runway r : entry.getKey().activeRunways) {
-                if (r.name.equals(this.name)) {
-                    found = true;
+        
+        for(Configuration c : departing_flow.keySet())
+        {
+            
+            boolean usesRunway = false;
+            
+            for(Runway r : c.activeRunways)
+            {
+                if(r.getName().equals(this.getName()))
+                {
+                    usesRunway = true;
                     break;
                 }
             }
-            if (found) {
-                cplex.addEq(entry.getValue(), rhs);
+            
+            if(!usesRunway)
+            {
+                cplex.addEq(departing_flow.get(c), 0);
             }
-            else {
-                cplex.addEq(entry.getValue(), 0);
-            }
+        
         }
-        //cplex.addEq(departing_flow, rhs);
         
         
         
         // conservation of flow: exiting traffic = arriving traffic
         
-        
-        
-        Map<Node, IloNumVar> exitingFlow = new HashMap<>();
-        
+        Node main_arr = exiting.get(exiting.size()-1);
         
         for(Node n : exiting)
         {
-            IloNumVar exitAtN = cplex.numVar(0, 100000);
-            exitingFlow.put(n, exitAtN);
+            for(Configuration c : arriving_flow.keySet())
+            {
+                rhs = cplex.linearNumExpr(); // difference between entering and exiting at each node
+
+                if(n == main_arr)
+                {
+                    rhs.addTerm(-1, arriving_flow.get(c));
+                }
+                
+                for(Link l : n.getIncoming())
+                {
+                    if(l instanceof Taxiway)
+                    {
+                        Taxiway ij = (Taxiway)l;
+                        rhs.addTerm(1, ij.arr_flow_ij.get(c));
+                        rhs.addTerm(-1, ij.arr_flow_ji.get(c));
+                        
+                        //rhs.addTerm(1, ij.flow_ij); // ij is incoming flow
+                        //rhs.addTerm(-1, ij.flow_ji); // ji is outgoing flow
+                    }
+                }
+
+                for(Link l : n.getOutgoing())
+                {
+                    if(l instanceof Taxiway)
+                    {
+                        Taxiway ji = (Taxiway)l;
+                        rhs.addTerm(-1, ji.arr_flow_ij.get(c));
+                        rhs.addTerm(1, ji.arr_flow_ji.get(c));
+                        
+                        //rhs.addTerm(-1, ji.flow_ij); // ij is outgoing flow
+                        //rhs.addTerm(1, ji.flow_ji); // ji is incoming flow
+                    }
+                }
+                
+                cplex.addEq(rhs, 0);
+                
+                
+                rhs = cplex.linearNumExpr(); // difference between entering and exiting at each node
+
+                
+                for(Link l : n.getIncoming())
+                {
+                    if(l instanceof Taxiway)
+                    {
+                        Taxiway ij = (Taxiway)l;
+                        rhs.addTerm(1, ij.dep_flow_ij.get(c));
+                        rhs.addTerm(-1, ij.dep_flow_ji.get(c));
+                        
+                        //rhs.addTerm(1, ij.flow_ij); // ij is incoming flow
+                        //rhs.addTerm(-1, ij.flow_ji); // ji is outgoing flow
+                    }
+                }
+
+                for(Link l : n.getOutgoing())
+                {
+                    if(l instanceof Taxiway)
+                    {
+                        Taxiway ji = (Taxiway)l;
+                        rhs.addTerm(-1, ji.dep_flow_ij.get(c));
+                        rhs.addTerm(1, ji.dep_flow_ji.get(c));
+                        
+                        //rhs.addTerm(-1, ji.flow_ij); // ij is outgoing flow
+                        //rhs.addTerm(1, ji.flow_ji); // ji is incoming flow
+                    }
+                }
+                
+                cplex.addEq(rhs, 0);
+            }
             
-            rhs = cplex.linearNumExpr(); // difference between entering and exiting at each node
+            
+            
+                        
+        }
+
+
+        
+        for(Configuration c : arriving_flow.keySet())
+        {
+  
+            
+            boolean usesRunway = false;
+            
+            for(Runway r : c.activeRunways)
+            {
+                if(r.getName().equals(this.getName()))
+                {
+                    usesRunway = true;
+                    break;
+                }
+            }
+            
+            if(!usesRunway)
+            {
+                cplex.addEq(arriving_flow.get(c), 0);
+            }
+        
+        }
+        
+        // plow all entrances and exits
+        
+        /*
+        for(Node n : exiting)
+        {
+            rhs = cplex.linearNumExpr();
             
             for(Link l : n.getIncoming())
             {
-                if(l instanceof Taxiway)
-                {
-                    Taxiway ij = (Taxiway)l;
-                    for (Map.Entry<Configuration, IloNumVar> entry : ij.flow_ij.entrySet()) {
-                        rhs.addTerm(-1, entry.getValue());
-                    }
-                    for (Map.Entry<Configuration, IloNumVar> entry : ij.flow_ji.entrySet()) {
-                        rhs.addTerm(1, entry.getValue());
-                    }
-                    //rhs.addTerm(-1, ij.flow_ij); // ij is incoming flow
-                    //rhs.addTerm(1, ij.flow_ji); // ji is outgoing flow
-                }
+                rhs.addTerm(1, l.x);
             }
             
             for(Link l : n.getOutgoing())
             {
-                if(l instanceof Taxiway)
-                {
-                    Taxiway ji = (Taxiway)l;
-                    for (Map.Entry<Configuration, IloNumVar> entry : ji.flow_ij.entrySet()) {
-                        rhs.addTerm(1, entry.getValue());
-                    }
-                    for (Map.Entry<Configuration, IloNumVar> entry : ji.flow_ji.entrySet()) {
-                        rhs.addTerm(-1, entry.getValue());
-                    }
-                    //rhs.addTerm(1, ji.flow_ij); // ij is outgoing flow
-                    //rhs.addTerm(-1, ji.flow_ji); // ji is incoming flow
-                }
+                rhs.addTerm(1, x);
             }
             
-            cplex.addEq(exitAtN, rhs);
+            cplex.addGe(rhs, x);
         }
+        */
         
-        rhs = cplex.linearNumExpr();
-        
-        for(Node n : exitingFlow.keySet())
-        {
-            rhs.addTerm(1, exitingFlow.get(n));
-        }
-        
-        for (Map.Entry<Configuration, IloNumVar> entry : arriving_flow.entrySet()) {
-            boolean found = false;
-            for (Runway r : entry.getKey().activeRunways) {
-                if (r.name.equals(this.name)) {
-                    found = true;
-                    break;
-                }
-            }
-            if (found) {
-                cplex.addEq(entry.getValue(), rhs);
-            }
-            else {
-                cplex.addEq(entry.getValue(), 0);
-            }
-        }
-        //cplex.addEq(arriving_flow, rhs);
     }
     
     public Type getType()

@@ -12,7 +12,7 @@ import ilog.cplex.IloCplex;
  *
  * @author micha
  */
-public abstract class AirportComponent 
+public abstract class AirportComponent implements Comparable<AirportComponent>
 {
     public static enum Type {runway, taxiway, gate, none};
     //public static char size; // A--F
@@ -32,6 +32,11 @@ public abstract class AirportComponent
     public void addConstraints(IloCplex cplex) throws IloException
     {
         // nothing to do here
+    }
+    
+    public int compareTo(AirportComponent rhs)
+    {
+        return name.compareTo(rhs.name);
     }
     
     public String toString()

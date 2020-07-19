@@ -57,20 +57,28 @@ import java.util.Scanner;
  */
 public class MapViewer extends JMapViewer
 {
-    public static void main(String[] args)
+    public static void main(String[] args) throws Exception
     {
+        Airport airport = new Airport("MSP_temp"); //change this to change the airport
+        airport.solveCplex();
+        
+        
         JFrame frame = new JFrame();
-        frame.add(new MapViewer(500, 500));
+        frame.add(new MapViewer(airport, 500, 500));
         frame.pack();
         frame.setVisible(true);
     }
     private int scale;
+    
+    Airport airport;
 
-    public MapViewer(int viewWidth, int viewHeight)
+    public MapViewer(Airport airport, int viewWidth, int viewHeight)
     {
         setPreferredSize(new Dimension(viewWidth, viewHeight));
         
         scale = 1;
+        
+        this.airport = airport;
         
         setFont(new Font("Arial", Font.BOLD, 14));
         
@@ -94,27 +102,27 @@ public class MapViewer extends JMapViewer
     
     //Selecting a color based on y value
     protected Color yColor(double y) {
-        if (y == 0) { //=0, gray
+        if (y< 0.5) { //=0, gray
             Color min = new Color(61, 61, 61);
             return min;
         }
-        if (y == 1) { //=1, purple
+        else if (y <= 1) { //=1, purple
             Color one = new Color(153, 51, 155);
             return one;
         }
-        if (y == 2) { //=2, green
+        else if (y <= 2) { //=2, green
             Color two = new Color(6, 215, 160);
             return two;
         }
-        if (y == 3) { //=3, red
+        else if (y <= 3) { //=3, red
             Color three = new Color(239, 71, 111);
             return three;
         }
-        if (y > 3 && y < 8) { //4-7, yellow
+        else if (y > 3 && y < 8) { //4-7, yellow
             Color middle2 = new Color(255, 209, 102);
             return middle2;
         }
-        if (y > 7 && y < 12) { //8-11, orange
+        else if (y > 7 && y < 12) { //8-11, orange
             Color middle3 = new Color(255, 126, 62);
             return middle3;
         }
@@ -126,20 +134,13 @@ public class MapViewer extends JMapViewer
         Graphics2D g = (Graphics2D)window;
         super.paintComponent(g);
         
-        boolean colorcodeY = false; //boolean to see if we should color code based on y or x
-        boolean lookAtY1 = false; //color code based on only y1 values
+        boolean colorcodeY = true; //boolean to see if we should color code based on y or x
+        boolean lookAtY1 = true; //color code based on only y1 values
         boolean lookAtY2 = false; //color code based on only y2 values
         boolean lookAtBoth = true; //color code based on sum y1+y2.
                                     //If this is true, lookAtY1 and lookAtY2 should be false
         g.setStroke(new BasicStroke(5));
-        Airport airport = null;
-        try {
-            airport = new Airport("MSP_temp"); //change this to change the airport
-            airport.solveCplex();
-        }
-        catch (Exception e) {
-            System.out.println("exception caught");
-        }
+        
         for (Map.Entry<String, Link> entry : airport.lookupLink.entrySet()) {
             g.setColor(Color.black);
             Link l = entry.getValue();
@@ -160,6 +161,7 @@ public class MapViewer extends JMapViewer
                 //System.out.println("x1: " + l.value_x1);
                 //System.out.println("x2: " + l.value_x2);
                 //System.out.println("x3: " + l.value_x3);
+                
                 if (l.value_y1 > 0) {
                     g.setColor(Color.red);
                 }
@@ -182,38 +184,50 @@ public class MapViewer extends JMapViewer
         }
         catch (Exception e) {
             System.out.println("exception caught");
+            e.printStackTrace(System.err);
         }
         if (in != null) {
             in.nextLine();
             while (in.hasNext()) {
-                g.setColor(Color.black);
-                in.next();
+                
+                String name = in.next();
                 double latitude = in.nextDouble();
                 double longitude = in.nextDouble();
                 Coordinate coordinate = new Coordinate(latitude, longitude);
                 Point gate = getMapPosition(coordinate, false);
+                
+                
                 for (Gate gates : airport.gates) {
-                    if (colorcodeY) {
-                        if (lookAtY1) {
-                            g.setColor(yColor(gates.value_y1));
+                    
+                    if(gates.getName().equals(name))
+                    {
+
+                        g.setColor(Color.black);
+
+
+                        if (colorcodeY) {
+                            if (lookAtY1) {
+                                g.setColor(yColor(gates.value_y1));
+                            }
+                            if (lookAtY2) {
+                                g.setColor(yColor(gates.value_y2));
+                            }
+                            if (lookAtBoth) {
+                                g.setColor(yColor(gates.value_yBoth));
+                            }
                         }
-                        if (lookAtY2) {
-                            g.setColor(yColor(gates.value_y2));
+                        else {
+                            if (gates.value_y1 > 0) {
+                                g.setColor(Color.red);
+                            }
+                            if (gates.value_y2 > 0) {
+                                g.setColor(Color.green);
+                            }
+                            if (gates.value_x3 > 0) {
+                                g.setColor(Color.blue);
+                            }
                         }
-                        if (lookAtBoth) {
-                            g.setColor(yColor(gates.value_yBoth));
-                        }
-                    }
-                    else {
-                        if (gates.value_y1 > 0) {
-                            g.setColor(Color.red);
-                        }
-                        if (gates.value_y2 > 0) {
-                            g.setColor(Color.green);
-                        }
-                        if (gates.value_x3 > 0) {
-                            g.setColor(Color.blue);
-                        }
+                        break;
                     }
                 }
             g.drawOval(gate.x, gate.y, 2, 2);

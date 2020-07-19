@@ -15,6 +15,7 @@ import ilog.cplex.IloCplexModeler;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,9 @@ public class Airport
     public static final boolean enable_x2 = false;
     public static final boolean enable_x3 = false;
     public static final boolean enable_all = false;
+    
+    
+    private String parking;
 
     // define the runways in 1 direction only please
 
@@ -86,6 +90,10 @@ public class Airport
         }
         filein.close();
         
+        filein = new Scanner(new File(directory+"parking.txt"));
+        parking = filein.next();
+        filein.close();
+        
         //fill runwayLinks and runwayNodes with runway data from both Configurations
         File tempDir = new File(directory);
         String[] tempAllFiles = tempDir.list();
@@ -97,6 +105,7 @@ public class Airport
                 in.close();
             }
         }
+        
         
         filein = new Scanner(new File(directory+"links.txt"));
         filein.nextLine();
@@ -143,7 +152,7 @@ public class Airport
                 in.close();
             }
         }
-        
+   
         
         //populate configurations ArrayList by iterating through files in directory
         for (String s : allFiles) {
@@ -157,7 +166,10 @@ public class Airport
                 configurations.add(c);
             }
         }
+        
+        
 
+        
         filein = new Scanner(new File(directory+"/arrivals.txt"));
         filein.nextLine();
 
@@ -222,6 +234,7 @@ public class Airport
             components.add(r);
         }
 
+        
 
 
 
@@ -297,6 +310,7 @@ public class Airport
             String name = filein.next();
             String line = filein.nextLine().trim();
 
+            
             String temp = line.substring(1, line.indexOf('}'));
             line = line.substring(line.indexOf('}')+1).trim();
             Scanner chopper = new Scanner(temp);
@@ -329,21 +343,27 @@ public class Airport
                 exiting.add(lookupNode.get(chopper.next()));
             }
             tempRunways.add(new Runway(name, links, entering, exiting));
+            
         }
         return tempRunways;
     }
 
     private Node findNode(String name)
     {
+        
         if(!lookupNode.containsKey(name))
         {
             Node node = new Node(name);
             Coordinate coordinate = coordinates.get(name);
             node.coordinates = coordinate;
+            
+            
             if(!runwayNodes.contains(name))
             {
                 nodes.add(node);
             }
+            
+            
 
             lookupNode.put(name, node);
             return node;
@@ -394,31 +414,97 @@ public class Airport
     public void solveCplex() throws IloException
     {   
 
+        
+        
         IloCplex cplex = new IloCplex();
 
         for(AirportComponent c : components)
         {
             c.createVariables(cplex);
         }
+        
+        
         //Constraints for snowplows to leave from and return to a certain node.
         //Arbitrarily picked node 80.
         //Loop through all the links until one that starts at node 80 is found.
-        for (Map.Entry<String, Link> entry : lookupLink.entrySet()) {
-            Link l = entry.getValue();
-            if (l.source.name.equals("80")) {
-                IloLinearNumExpr sumY1 = cplex.linearNumExpr();
-                IloLinearNumExpr sumY2 = cplex.linearNumExpr();
-                for (Map.Entry<String, Link> e : lookupLink.entrySet()) {
-                    sumY1.addTerm(1, e.getValue().y1_ij);
-                    sumY2.addTerm(1, e.getValue().y2_ij);
+        
+        /*
+        IloLinearNumExpr sumY1 = cplex.linearNumExpr();
+        IloLinearNumExpr sumY2 = cplex.linearNumExpr();
+        for (Map.Entry<String, Link> e : lookupLink.entrySet()) {
+            
+            if(enable_x1)
+            {
+                sumY1.addTerm(1, e.getValue().y1_ij);
+                sumY2.addTerm(1, e.getValue().y2_ij);
+            }
+            
+            if(enable_x2)
+            {
+                sumY1.addTerm(1, e.getValue().y1_ji);
+                sumY2.addTerm(1, e.getValue().y2_ji);
+            }
+        }
+        
+        for(Node n : nodes)
+        {
+            if(n.getName().equals(parking))
+            {
+                n.snowplow_parking = true;
+                if(enable_x1)
+                {
+                    cplex.addEq(n.z1, 1);
                 }
-                cplex.addGe(l.y1_ij, cplex.prod(sumY1, 1.0/10000));
-                cplex.addGe(l.y2_ij, cplex.prod(sumY2, 1.0/10000));
+                
+                if(enable_x2)
+                {
+                    cplex.addEq(n.z2, 1);
+                }
                 break;
             }
         }
+        
+        IloLinearNumExpr lhs1 = cplex.linearNumExpr();
+        IloLinearNumExpr lhs2 = cplex.linearNumExpr();
+        
+        for (Map.Entry<String, Link> entry : lookupLink.entrySet()) {
+            Link l = entry.getValue();
+            if (l.source.name.equals(parking) || l.dest.name.equals(parking)) {
+                
+                if(enable_x1)
+                {
+                    lhs1.addTerm(1, l.y1_ij);
+                    lhs1.addTerm(1, l.y1_ji);
+                }
+                
+                if(enable_x2)
+                {
+                    lhs2.addTerm(1, l.y2_ij);
+                    lhs2.addTerm(1, l.y2_ji);
+                }
+            }
+        }
+        
+        if(enable_x1)
+        {
+            cplex.addGe(lhs1, cplex.prod(sumY1, 1.0/10000));
+        }
+        
+        if(enable_x2)
+        {
+            cplex.addGe(lhs2, cplex.prod(sumY2, 1.0/10000));
+        }
+        */
+        
+        
+        
+        
+        
+        
+        
         for(AirportComponent c : components)
         {
+
             c.addConstraints(cplex);
         }
 
@@ -477,7 +563,7 @@ public class Airport
                 {
                     if(g.getSize() == i)
                     {
-                        for (Map.Entry<Configuration, IloNumVar> entry : g.flow_ij.entrySet()) {
+                        for (Map.Entry<Configuration, IloNumVar> entry : g.dep_flow_ij.entrySet()) {
                             lhs.addTerm(1, entry.getValue());
                         }
                         //lhs.addTerm(1, g.flow_ij);
@@ -503,7 +589,7 @@ public class Airport
                 {
                     if(g.getSize() == i)
                     {
-                        for (Map.Entry<Configuration, IloNumVar> entry : g.flow_ji.entrySet()) {
+                        for (Map.Entry<Configuration, IloNumVar> entry : g.arr_flow_ji.entrySet()) {
                             lhs.addTerm(1, entry.getValue());
                         }
                         //lhs.addTerm(1, g.flow_ji);
@@ -579,6 +665,7 @@ public class Airport
         for(Taxiway t : taxiways) {
             AT1.addTerm(t.getArea(), t.y1_ij);
             AT1.addTerm(t.getArea(), t.y1_ji);
+            
         }
         //calculate gate area
         IloLinearNumExpr AG1 = cplex.linearNumExpr();
@@ -588,21 +675,22 @@ public class Airport
         }
 
         //Runway pavement:
+        IloNumExpr ART1 = cplex.sum(AT1, AR1);
         //ER_Req1 = ceil((AR1/ATR)*ER + (AR1/A)*EB); --> required equipment for runway operations
         IloNumVar ER_Req1 = cplex.numVar(0, (int) INFTY);
-        cplex.addEq(ER_Req1, cplex.sum(cplex.prod(AR1, 1.0/ATR*ER), cplex.prod(AR1, 1.0/A*EB)));
+        cplex.addEq(ER_Req1, cplex.sum(cplex.prod(AR1, 1.0/ATR*ER), cplex.prod(ART1, 1.0/A*EB)));
         //PR_Req1 = ceil((ER_Req1/E)*P); --> personnel required for runway operations
         IloNumVar PR_Req1 = cplex.numVar(0, (int) INFTY);
         cplex.addEq(PR_Req1, cplex.prod(ER_Req1, P/E));
         //DeiceR_Req1 = (AR1/A)*Deice; --> gal/year deice required for runway
         IloNumVar DeiceR_Req1 = cplex.numVar(0, INFTY);
-        cplex.addEq(DeiceR_Req1, cplex.prod(AR1, Deice/A));
+        cplex.addEq(DeiceR_Req1, cplex.prod(ART1, Deice/A));
         //CRP1 = (CPM*PR_Req1*(PM/P))+(CPR*PR_Req1*(PR/P)); --> annual cost of personnel for runway operations
         IloNumVar CRP1 = cplex.numVar(0, INFTY);
         cplex.addEq(CRP1, cplex.sum(cplex.prod(CPM, cplex.prod(PR_Req1, PM/P)), cplex.prod(CPR, cplex.prod(PR_Req1, PR/P))));
         //CRE1 = ((AR1/A)*EB*(CEB) + (AR1/ATR)*ER*(CER)) * MF1; --> life time cost of equipment and maintenance
         IloNumVar CRE1 = cplex.numVar(0, INFTY);
-        cplex.addEq(CRE1, cplex.prod(cplex.sum(cplex.prod(AR1, 1.0/A*EB*CEB), cplex.prod(AR1, 1.0/ATR*ER*CER)), MF));
+        cplex.addEq(CRE1, cplex.prod(cplex.sum(cplex.prod(ART1, 1.0/A*EB*CEB), cplex.prod(ART1, 1.0/ATR*ER*CER)), MF));
         //CRD1 = (DeiceR_Req1)* 25; --> annual cost of deicing material
         IloNumVar CRD1 = cplex.numVar(0, INFTY);
         cplex.addEq(CRD1, cplex.prod(DeiceR_Req1, 25));
@@ -669,23 +757,24 @@ public class Airport
         }
 
         //Runway area:
+        IloNumExpr ART2 = cplex.sum(AR2, AT2);
         // ER_Req = ceil((AR2/ATR)*ER + (AR2/A)*EB);        // required
         // *** ? should the second term be AG/ATG * EG?
         // make this an IloIntVar, and make the constraint GE to convert to integer variable
         IloNumVar ER_Req2 = cplex.numVar(0, (int) INFTY);
-        cplex.addEq(ER_Req2, cplex.sum(cplex.prod(AR2, 1.0/ATR*ER), cplex.prod(AR2, 1.0/A*EB)));
+        cplex.addEq(ER_Req2, cplex.sum(cplex.prod(ART2, 1.0/ATR*ER), cplex.prod(ART2, 1.0/A*EB)));
         // PR_Req2 = ceil((ER_Req2/E)*PR);                // personnel required for runway operations
         IloNumVar PR_Req2 = cplex.numVar(0, (int) INFTY);
         cplex.addEq(PR_Req2, cplex.prod(ER_Req2, PR/E));
         // DeiceR_Req2 = (AR/A)*Deice;                  // gal/year deice required for runway
         IloNumVar DeiceR_Req2 = cplex.numVar(0, INFTY);
-        cplex.addEq(DeiceR_Req2, cplex.prod(AR2, Deice/A));
+        cplex.addEq(DeiceR_Req2, cplex.prod(ART2, Deice/A));
         //CRP2 = (CPM*PR_Req2*(PM/P))+(CPR*PR_Req2*(PR/P));      // annual cost of personnel for runway operations
         IloNumVar CRP2 = cplex.numVar(0, INFTY);
         cplex.addEq(CRP2, cplex.prod(PR_Req2, CPM*PM/P + CPR*PR/P));
         //CRE2 = ((AR2/A)*EB*(CEB) + (AR2/ATR)*ER*(CER)) * MF2 * ACF ;        //life time cost of equipment and maintance
         IloNumVar CRE2 = cplex.numVar(0, INFTY);
-        cplex.addEq(CRE2, cplex.prod(cplex.prod(cplex.sum(cplex.prod(AR2, EB*CEB/A), cplex.prod(AR2, ER*CER/ATR)), MF), ACF));
+        cplex.addEq(CRE2, cplex.prod(cplex.prod(cplex.sum(cplex.prod(ART2, EB*CEB/A), cplex.prod(ART2, ER*CER/ATR)), MF), ACF));
         //CRD2 = (DeiceR_Req2)* 25;                             // annual cost of deicing material
         IloNumVar CRD2 = cplex.numVar(0, INFTY);
         cplex.addEq(CRD2, cplex.prod(DeiceR_Req2, 25));
@@ -752,10 +841,11 @@ public class Airport
         */
         double TEC = 1312398.71+ 521979.36+1102495.15+529704.75+254456.34+373947.67;
 
+        IloNumExpr ART3 = cplex.sum(AR3, AT3);
         //Runway pavement:
         //ER_Req3 = ceil(0.15*((AR3/ATR)*ER + (AR3/A)*EB)); --> required equipment for runway operations, keep 15% of current equipment in case
         IloNumVar ER_Req3 = cplex.numVar(0, (int) INFTY);
-        cplex.addEq(ER_Req3, cplex.prod(cplex.sum(cplex.prod(AR3, 1.0/ATR*ER), cplex.prod(AR3, 1.0/A*EB)), .15));
+        cplex.addEq(ER_Req3, cplex.prod(cplex.sum(cplex.prod(ART3, 1.0/ATR*ER), cplex.prod(ART3, 1.0/A*EB)), .15));
         //PR_Req3 = ceil((ER_Req3/E)*P); --> personnel required for runway operations
         IloNumVar PR_Req3 = cplex.numVar(0, (int) INFTY);
         cplex.addEq(PR_Req3, cplex.prod(ER_Req3, P/E));
@@ -764,13 +854,13 @@ public class Airport
         cplex.addEq(CRP3, cplex.sum(cplex.prod(cplex.prod(CPM, PR_Req3), PM/P), cplex.prod(cplex.prod(CPR, PR_Req3), PR/P)));
         //CRE3 = 0.15*(((AR3/A)*EB*(CEB) + (AR3/ATR)*ER*(CER)) * MFE3); --> life time cost of equipment and maintenance
         IloNumVar CRE3 = cplex.numVar(0, INFTY);
-        cplex.addEq(CRE3, cplex.prod(.15, cplex.sum(cplex.prod(AR3, EB*CEB/A), cplex.prod(AR3, ER*CER/ATR*MF))));
+        cplex.addEq(CRE3, cplex.prod(.15, cplex.sum(cplex.prod(ART3, EB*CEB/A), cplex.prod(ART3, ER*CER/ATR*MF))));
         //CRHP3 =  MFP*(CHP * AR3); --> cost of hydronic pavement construction
         IloNumVar CRHP3 = cplex.numVar(0, INFTY);
-        cplex.addEq(CRHP3, cplex.prod(MFP, cplex.prod(CHP, AR3)));
+        cplex.addEq(CRHP3, cplex.prod(MFP, cplex.prod(CHP, ART3)));
         //CREE3 = TEC *(AR3/AH); --> energy cost for runway area
         IloNumVar CREE3 = cplex.numVar(0, INFTY);
-        cplex.addEq(CREE3, cplex.prod(AR3, .99)); //.99 is cost per sq ft of runway. Had to do it this way because divison was weird
+        cplex.addEq(CREE3, cplex.prod(ART3, .99)); //.99 is cost per sq ft of runway. Had to do it this way because divison was weird
         //CR_Total3 = LC3*(CRP3 + CREE3) + CRE3 + CRHP3; --> total cost for life cycle for runway pavement
         IloNumVar CR_Total3 = cplex.numVar(0, INFTY);
         cplex.addEq(CR_Total3, cplex.sum(cplex.prod(LC3, cplex.sum(CRP3, CREE3)), cplex.sum(CRE3, CRHP3)));
@@ -810,17 +900,26 @@ public class Airport
         obj.addTerm(1, CR_Total3);
         obj.addTerm(1, CG_Total3);
                 
+        /*
         for(Taxiway t : taxiways)
         {
-            for (Map.Entry<Configuration, IloNumVar> entry : t.flow_ij.entrySet()) {
+            for (Map.Entry<Configuration, IloNumVar> entry : t.dep_flow_ij.entrySet()) {
                 obj.addTerm(0.001, entry.getValue());
             }
-            for (Map.Entry<Configuration, IloNumVar> entry : t.flow_ji.entrySet()) {
+            for (Map.Entry<Configuration, IloNumVar> entry : t.dep_flow_ji.entrySet()) {
+                obj.addTerm(0.001, entry.getValue());
+            }
+            
+            for (Map.Entry<Configuration, IloNumVar> entry : t.arr_flow_ij.entrySet()) {
+                obj.addTerm(0.001, entry.getValue());
+            }
+            for (Map.Entry<Configuration, IloNumVar> entry : t.arr_flow_ji.entrySet()) {
                 obj.addTerm(0.001, entry.getValue());
             }
             //obj.addTerm(0.001, t.flow_ij);
             //obj.addTerm(0.001, t.flow_ji);
         }
+        */
 
         cplex.addMinimize(obj);
 
@@ -861,37 +960,62 @@ public class Airport
         //Print y and x values for links.
         System.out.println();
         for (Map.Entry<String, Link> entry : lookupLink.entrySet()) {
+            
+            
             Link l = entry.getValue();
-            System.out.println(entry.getKey() + "\ty1_ij: " + cplex.getValue(l.y1_ij) 
-                    + "\ty1_ji: " + cplex.getValue(l.y1_ji) +"\tx1: " + cplex.getValue(l.x_1));
-            System.out.println(entry.getKey() + "\ty2_ij: " + cplex.getValue(l.y2_ij) 
-                    + "\ty2_ji: " + cplex.getValue(l.y2_ji) +"\tx2: " + cplex.getValue(l.x_2));
+            
+            if(l.value_y1 + l.value_y2 + l.value_x3 > 0)
+            {
+                System.out.println(entry.getKey() + "\ty1_ij: " + (int)Math.round(cplex.getValue(l.y1_ij))
+                        + "\ty1_ji: " + (int)Math.round(cplex.getValue(l.y1_ji)) +"\tx1: " + (int)Math.round(cplex.getValue(l.x_1)));
+                
+                System.out.println(entry.getKey() + "\ty2_ij: " + (int)Math.round(cplex.getValue(l.y2_ij)) 
+                        + "\ty2_ji: " + (int)Math.round(cplex.getValue(l.y2_ji)) +"\tx2: " + (int)Math.round(cplex.getValue(l.x_2)));
+                
+            }
         }
         
         //print taxiway flow information.
         System.out.println();
-        System.out.println("taxiway\tflow_ij\tflow_ji");
+        System.out.println("taxiway\tdep flow_ij\tarr flow_ij\tx1\tx2\tx3\ty1\ty2");
         for (Taxiway t : taxiways) {
-            System.out.print(t.name + "\t");
-            for (Map.Entry<Configuration, IloNumVar> entry : t.flow_ij.entrySet()) {
-                System.out.print(cplex.getValue(entry.getValue()) + "\t");
-            }
-            for (Map.Entry<Configuration, IloNumVar> entry : t.flow_ji.entrySet()) {
-                System.out.println(cplex.getValue(entry.getValue()));
+            if(t.value_x1+t.value_x2+t.value_x3 > 0)
+            {
+                System.out.print(t.name + "\t");
+                
+                for(Configuration c : configurations)
+                {
+                    System.out.print(cplex.getValue(t.dep_flow_ij.get(c))-cplex.getValue(t.dep_flow_ji.get(c))+"\t");
+                }
+ 
+                for(Configuration c : configurations)
+                {
+                    System.out.print(cplex.getValue(t.arr_flow_ij.get(c))-cplex.getValue(t.arr_flow_ji.get(c))+"\t");
+                }
+                System.out.println(t.value_x1+"\t"+t.value_x2+"\t"+t.value_x3+"\t"+t.value_y1+"\t"+t.value_y2);
             }
         }
         
+
+ 
+        
         //print gate flow information
         System.out.println();
-        System.out.println("gate\tflow_ij\tflow_ji");
+        System.out.println("gate\tdep flow\tarr flow\tx_1\tx_2\tx_3");
         for (Gate g : gates) {
-            System.out.print(g.name + "\t");
-            for (Map.Entry<Configuration, IloNumVar> entry : g.flow_ij.entrySet()) {
-                System.out.print(cplex.getValue(entry.getValue()) + "\t");
+            
+            if(g.value_x1+g.value_x2+g.value_x3 > 0)
+            {
+                System.out.print(g.name + "\t");
+                for (Map.Entry<Configuration, IloNumVar> entry : g.dep_flow_ij.entrySet()) {
+                    System.out.print(cplex.getValue(entry.getValue()) + "\t");
+                }
+                for (Map.Entry<Configuration, IloNumVar> entry : g.arr_flow_ji.entrySet()) {
+                    System.out.print(cplex.getValue(entry.getValue())+"\t");
+                }
+                System.out.println(g.value_x1+"\t"+g.value_x2+"\t"+g.value_x3);
             }
-            for (Map.Entry<Configuration, IloNumVar> entry : g.flow_ji.entrySet()) {
-                System.out.println(cplex.getValue(entry.getValue()));
-            }
+            
         }
 
         /*System.out.println("Gates\tx\ty_ij\ty_ji\tflow_in\tflow_out");

@@ -18,7 +18,7 @@ import java.util.Map;
 public class Taxiway extends Link
 {
     
-    protected Map<Configuration, IloNumVar> flow_ij, flow_ji;
+    protected Map<Configuration, IloNumVar> arr_flow_ij, arr_flow_ji, dep_flow_ij, dep_flow_ji;
     //protected IloNumVar flow_ij, flow_ji;
     
     public Taxiway(String name, Node source, Node dest, double area)
@@ -33,14 +33,19 @@ public class Taxiway extends Link
         super.addConstraints(cplex);
         
         double capacity = getCapacity();
-        flow_ij = new HashMap<>();
-        flow_ji = new HashMap<>();
+        arr_flow_ij = new HashMap<>();
+        arr_flow_ji = new HashMap<>();
+        dep_flow_ij = new HashMap<>();
+        dep_flow_ji = new HashMap<>();
         
         for (Configuration c : Airport.configurations) {
-            flow_ij.put(c, cplex.numVar(0, 100000));
-            cplex.addLe(flow_ij.get(c), cplex.prod(x, capacity));
-            flow_ji.put(c, cplex.numVar(0, 100000));
-            cplex.addLe(flow_ji.get(c), cplex.prod(x, capacity));
+            arr_flow_ij.put(c, cplex.numVar(0, 100000));
+            arr_flow_ji.put(c, cplex.numVar(0, 100000));
+            dep_flow_ij.put(c, cplex.numVar(0, 100000));
+            dep_flow_ji.put(c, cplex.numVar(0, 100000));
+            
+            cplex.addLe(cplex.sum(cplex.sum(arr_flow_ij.get(c), dep_flow_ij.get(c)),
+                    cplex.sum(arr_flow_ji.get(c), dep_flow_ji.get(c))), cplex.prod(x, capacity));
         }
         //flow_ij = cplex.numVar(0, 100000);
         //flow_ji = cplex.numVar(0, 100000);

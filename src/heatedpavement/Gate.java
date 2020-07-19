@@ -23,6 +23,18 @@ public class Gate extends Taxiway
         this.size = size;
     }
     
+    public void addConstraints(IloCplex cplex) throws IloException
+    {
+        super.addConstraints(cplex);
+    
+        double capacity = getCapacity()/2;
+        
+        for (Configuration c : Airport.configurations) {
+            cplex.addLe(dep_flow_ij.get(c), capacity);
+            cplex.addLe(arr_flow_ji.get(c), capacity);
+        }
+    }
+    
     public char getSize()
     {
         return size;

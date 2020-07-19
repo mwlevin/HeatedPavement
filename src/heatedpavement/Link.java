@@ -25,6 +25,7 @@ public abstract class Link extends AirportComponent
     
     protected IloIntVar y1_ij, y1_ji; //number of times type 1 snowplow (non-autonomous) drives across link (i, j)
     protected IloIntVar y2_ij, y2_ji; //number of times type 2 snowplow (autonomous) drives across link (i, j)
+
     
     protected Node source, dest; 
     protected double value_x1, value_x2, value_x3;
@@ -66,6 +67,8 @@ public abstract class Link extends AirportComponent
         y1_ji = cplex.intVar(0, Integer.MAX_VALUE);
         y2_ij = cplex.intVar(0, Integer.MAX_VALUE);
         y2_ji = cplex.intVar(0, Integer.MAX_VALUE);
+        
+
         
         if(!Airport.enable_x1)
         {
