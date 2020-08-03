@@ -1,0 +1,2 @@
+id {links} {entering nodes} {exiting nodes}
+27	{12 23 34} {4} {1}
