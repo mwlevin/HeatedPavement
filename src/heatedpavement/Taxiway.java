@@ -52,13 +52,13 @@ public class Taxiway extends Link
         double capacity = getCapacity();
         
         
-        /*
+        
         for (Configuration c : Airport.configurations) {
             
             cplex.addLe(cplex.sum(cplex.sum(arr_flow_ij.get(c), dep_flow_ij.get(c)),
                     cplex.sum(arr_flow_ji.get(c), dep_flow_ji.get(c))), cplex.prod(x, capacity));
         }
-    */
+    
         
         
         //flow_ij = cplex.numVar(0, 100000);
