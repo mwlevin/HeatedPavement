@@ -28,11 +28,10 @@ public class Taxiway extends Link
        // flow_ji = new HashMap<>();
     }
     
-    public void addConstraints(IloCplex cplex) throws IloException
+    public void createVariables(IloCplex cplex) throws IloException
     {
-        super.addConstraints(cplex);
+        super.createVariables(cplex);
         
-        double capacity = getCapacity();
         arr_flow_ij = new HashMap<>();
         arr_flow_ji = new HashMap<>();
         dep_flow_ij = new HashMap<>();
@@ -43,10 +42,25 @@ public class Taxiway extends Link
             arr_flow_ji.put(c, cplex.numVar(0, 100000));
             dep_flow_ij.put(c, cplex.numVar(0, 100000));
             dep_flow_ji.put(c, cplex.numVar(0, 100000));
+        }
+    }
+    
+    public void addConstraints(IloCplex cplex) throws IloException
+    {
+        super.addConstraints(cplex);
+        
+        double capacity = getCapacity();
+        
+        
+        /*
+        for (Configuration c : Airport.configurations) {
             
             cplex.addLe(cplex.sum(cplex.sum(arr_flow_ij.get(c), dep_flow_ij.get(c)),
                     cplex.sum(arr_flow_ji.get(c), dep_flow_ji.get(c))), cplex.prod(x, capacity));
         }
+    */
+        
+        
         //flow_ij = cplex.numVar(0, 100000);
         //flow_ji = cplex.numVar(0, 100000);
         //cplex.addLe(flow_ij, cplex.prod(x, capacity));

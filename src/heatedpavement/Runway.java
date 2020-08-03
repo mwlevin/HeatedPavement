@@ -131,10 +131,19 @@ public class Runway extends AirportComponent
         
         Node main_dep = entering.get(0);
         
+        
         for(Node n : entering)
         {
             for(Configuration c : departing_flow.keySet())
             {
+     
+                if(!c.usesRunway(this))
+                {
+                    continue;
+                }
+                
+                
+                
                 rhs = cplex.linearNumExpr(); // difference between entering and exiting at each node
 
                 if(n == main_dep)
@@ -204,41 +213,31 @@ public class Runway extends AirportComponent
             }
             
             cplex.addEq(rhs, 0);
-
+            
         }
         
         
-        for(Configuration c : departing_flow.keySet())
-        {
-            
-            boolean usesRunway = false;
-            
-            for(Runway r : c.activeRunways)
-            {
-                if(r.getName().equals(this.getName()))
-                {
-                    usesRunway = true;
-                    break;
-                }
-            }
-            
-            if(!usesRunway)
-            {
-                cplex.addEq(departing_flow.get(c), 0);
-            }
         
-        }
         
         
         
         // conservation of flow: exiting traffic = arriving traffic
         
+        
         Node main_arr = exiting.get(exiting.size()-1);
         
         for(Node n : exiting)
         {
+            
             for(Configuration c : arriving_flow.keySet())
             {
+
+                if(!c.usesRunway(this))
+                {
+                    continue;
+                }
+                
+                
                 rhs = cplex.linearNumExpr(); // difference between entering and exiting at each node
 
                 if(n == main_arr)
@@ -274,6 +273,8 @@ public class Runway extends AirportComponent
                 
                 cplex.addEq(rhs, 0);
                 
+            
+                
                 
                 rhs = cplex.linearNumExpr(); // difference between entering and exiting at each node
 
@@ -305,36 +306,21 @@ public class Runway extends AirportComponent
                 }
                 
                 cplex.addEq(rhs, 0);
-            }
-            
-            
-            
-                        
+            }          
         }
-
+        
 
         
         for(Configuration c : arriving_flow.keySet())
         {
-  
-            
-            boolean usesRunway = false;
-            
-            for(Runway r : c.activeRunways)
+            if(!c.usesRunway(this))
             {
-                if(r.getName().equals(this.getName()))
-                {
-                    usesRunway = true;
-                    break;
-                }
-            }
-            
-            if(!usesRunway)
-            {
+                cplex.addEq(departing_flow.get(c), 0);
                 cplex.addEq(arriving_flow.get(c), 0);
             }
         
         }
+        
         
         // plow all entrances and exits
         
@@ -368,4 +354,6 @@ public class Runway extends AirportComponent
     {
         return links;
     }
+    
+    
 }

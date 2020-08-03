@@ -525,96 +525,116 @@ public class Airport
             total_arriving += arrivals.get(s);
         }
 
+        
+        IloLinearNumExpr lhs;
 
-        IloLinearNumExpr lhs = cplex.linearNumExpr();
-
-        for(Runway r : runways)
+        
+        for(Configuration c : configurations)
         {
-            for (Map.Entry<Configuration, IloNumVar> entry : r.departing_flow.entrySet()) {
-                lhs.addTerm(1, entry.getValue());
+            lhs = cplex.linearNumExpr();
+            for(Runway r : runways)
+            {
+                lhs.addTerm(1, r.departing_flow.get(c));
             }
-            //lhs.addTerm(1, r.departing_flow);
+
+            cplex.addEq(lhs, total_departing);
         }
+        
+        for(Configuration c : configurations)
+        {
+            lhs = cplex.linearNumExpr();
 
-        cplex.addEq(lhs, total_departing);
+            for(Runway r : runways)
+            {
+                lhs.addTerm(1, r.arriving_flow.get(c));
+                //lhs.addTerm(1, r.arriving_flow);
+            }
 
+            cplex.addEq(lhs, total_arriving);
+        }
+        
 
         // F.flow >= F.demand
         // F.flow + E.flow >= F.demand + E.demand
         // F.flow + E.flow + D.flow >= F.demand + E.demand + D.demand
         // etc.
 
+        
+        
+        /*
+        for(Configuration c : configurations)
+        {
+                
+                
+                
+                // convention: for gates, flow_ij is departing, flow_ji is arriving
+                for(char s = 'F'; s >= 'A'; s--)
+                {
+                    // this is for departures
+                    lhs = cplex.linearNumExpr();
+                    double total_demand = 0;
+
+                    for(char i = s; i <= 'F'; i++)
+                    {
+                        if(departures.containsKey(i))
+                        {
+                            total_demand += departures.get(i);
+                        }
+
+                        for(Gate g : gates)
+                        {
+                            if(g.getSize() == i)
+                            {
+                                lhs.addTerm(1, g.dep_flow_ij.get(c));
+                                //lhs.addTerm(1, g.flow_ij);
+                            }
+                        }
+                    }
+
+                    cplex.addGe(lhs, total_demand);
+   
+
+                // this is for arrivals
+                
+                total_demand = 0;
+                lhs = cplex.linearNumExpr();
+
+                for(char i = s; i <= 'F'; i++)
+                {
+                    
+                    if(arrivals.containsKey(i))
+                    {
+                        total_demand += arrivals.get(i);
+                    }
+
+                    for(Gate g : gates)
+                    {
+                        if(g.getSize() == i)
+                        {
+                            lhs.addTerm(1, g.arr_flow_ij.get(c));
+                            //lhs.addTerm(1, g.flow_ji);
+                        }
+                    }
+                }
+
+                cplex.addGe(lhs, total_demand);
+     
+            }
+        }
+        */
+        
+
         double demand = 0;
-        // convention: for gates, flow_ij is departing, flow_ji is arriving
+        
         for(char s = 'F'; s >= 'A'; s--)
         {
-            // this is for departures
-            lhs = cplex.linearNumExpr();
-            double total_demand = 0;
-
-            for(char i = s; i <= 'F'; i++)
+            if(departures.containsKey(s))
             {
-                if(departures.containsKey(i))
-                {
-                    total_demand += departures.get(i);
-                }
-
-                for(Gate g : gates)
-                {
-                    if(g.getSize() == i)
-                    {
-                        for (Map.Entry<Configuration, IloNumVar> entry : g.dep_flow_ij.entrySet()) {
-                            lhs.addTerm(1, entry.getValue());
-                        }
-                        //lhs.addTerm(1, g.flow_ij);
-                    }
-                }
+                demand += departures.get(s);
+                demand += arrivals.get(s);
             }
-
-            cplex.addGe(lhs, total_demand);
-            demand += total_demand;
-
-            // this is for arrivals
-            lhs = cplex.linearNumExpr();
-            total_demand = 0;
-
-            for(char i = s; i <= 'F'; i++)
-            {
-                if(arrivals.containsKey(i))
-                {
-                    total_demand += arrivals.get(i);
-                }
-
-                for(Gate g : gates)
-                {
-                    if(g.getSize() == i)
-                    {
-                        for (Map.Entry<Configuration, IloNumVar> entry : g.arr_flow_ji.entrySet()) {
-                            lhs.addTerm(1, entry.getValue());
-                        }
-                        //lhs.addTerm(1, g.flow_ji);
-                    }
-                }
-            }
-
-            cplex.addGe(lhs, total_demand);
-            demand += total_demand;
         }
-
-
-        lhs = cplex.linearNumExpr();
-
-        for(Runway r : runways)
-        {
-            for (Map.Entry<Configuration, IloNumVar> entry : r.arriving_flow.entrySet()) {
-                lhs.addTerm(1, entry.getValue());
-            }
-            //lhs.addTerm(1, r.arriving_flow);
-        }
-
-        cplex.addEq(lhs, total_arriving);
-
-
+        
         // Model Inputs
         double LC = 15;         // 15 year life cycle
 

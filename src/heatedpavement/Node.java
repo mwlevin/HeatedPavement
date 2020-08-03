@@ -101,7 +101,7 @@ public class Node extends AirportComponent
 
         
         // conservation of flow for snowplow paths
-        IloLinearNumExpr lhs = cplex.linearNumExpr();
+        
         IloLinearNumExpr incomingPlow1 = cplex.linearNumExpr();
         IloLinearNumExpr incomingPlow2 = cplex.linearNumExpr();
         IloLinearNumExpr outgoingPlow1 = cplex.linearNumExpr();
@@ -159,94 +159,89 @@ public class Node extends AirportComponent
             return;
         }
         
-        for(Link l : getIncoming())
+        
+        for(Configuration c : Airport.configurations)
         {
-            if(!(l instanceof Taxiway))
+            IloLinearNumExpr lhs = cplex.linearNumExpr();
+            for(Link l : getIncoming())
             {
-                continue;
+                if(!(l instanceof Taxiway))
+                {
+                    continue;
+                }
+                Taxiway ij = (Taxiway)l;
+
+                // flow_ij is incoming
+                // flow_ji is outgoing
+                lhs.addTerm(1, ij.arr_flow_ij.get(c));
+                lhs.addTerm(-1, ij.arr_flow_ji.get(c));
+                //lhs.addTerm(1, ij.flow_ij);
+                //lhs.addTerm(-1, ij.flow_ji);
             }
-            Taxiway ij = (Taxiway)l;
-            
-            // flow_ij is incoming
-            // flow_ji is outgoing
-            for (Map.Entry<Configuration, IloNumVar> entry : ij.arr_flow_ij.entrySet()) {
-                lhs.addTerm(1, entry.getValue());
+
+
+            for(Link l : getOutgoing())
+            {
+                if(!(l instanceof Taxiway))
+                {
+                    continue;
+                }
+                Taxiway ij = (Taxiway)l;
+
+                // flow_ij is outgoing
+                // flow_ji is incoming
+                lhs.addTerm(-1, ij.arr_flow_ij.get(c));
+                lhs.addTerm(1, ij.arr_flow_ji.get(c));
+                //lhs.addTerm(-1, ij.flow_ij);
+                //lhs.addTerm(1, ij.flow_ji);
             }
-            for (Map.Entry<Configuration, IloNumVar> entry : ij.arr_flow_ji.entrySet()) {
-                lhs.addTerm(-1, entry.getValue());
-            }
-            //lhs.addTerm(1, ij.flow_ij);
-            //lhs.addTerm(-1, ij.flow_ji);
+
+            cplex.addEq(lhs, 0);
         }
         
         
-        for(Link l : getOutgoing())
+        for(Configuration c : Airport.configurations)
         {
-            if(!(l instanceof Taxiway))
+            IloLinearNumExpr lhs = cplex.linearNumExpr();
+
+            for(Link l : getIncoming())
             {
-                continue;
+                if(!(l instanceof Taxiway))
+                {
+                    continue;
+                }
+                Taxiway ij = (Taxiway)l;
+
+                // flow_ij is incoming
+                // flow_ji is outgoing
+                lhs.addTerm(1, ij.dep_flow_ij.get(c));
+                lhs.addTerm(-1, ij.dep_flow_ji.get(c));
+                
+                //lhs.addTerm(1, ij.flow_ij);
+                //lhs.addTerm(-1, ij.flow_ji);
             }
-            Taxiway ij = (Taxiway)l;
+
             
-            // flow_ij is outgoing
-            // flow_ji is incoming
-            for (Map.Entry<Configuration, IloNumVar> entry : ij.arr_flow_ij.entrySet()) {
-                lhs.addTerm(-1, entry.getValue());
-            }
-            for (Map.Entry<Configuration, IloNumVar> entry : ij.arr_flow_ji.entrySet()) {
-                lhs.addTerm(1, entry.getValue());
-            }
-            //lhs.addTerm(-1, ij.flow_ij);
-            //lhs.addTerm(1, ij.flow_ji);
-        }
-        
-        cplex.addEq(lhs, 0);
-        
-        
-        lhs = cplex.linearNumExpr();
-        
-        for(Link l : getIncoming())
-        {
-            if(!(l instanceof Taxiway))
+            for(Link l : getOutgoing())
             {
-                continue;
+                if(!(l instanceof Taxiway))
+                {
+                    continue;
+                }
+                Taxiway ij = (Taxiway)l;
+
+                // flow_ij is outgoing
+                // flow_ji is incoming
+                lhs.addTerm(-1, ij.dep_flow_ij.get(c));
+                lhs.addTerm(1, ij.dep_flow_ji.get(c));
+                
+                //lhs.addTerm(-1, ij.flow_ij);
+                //lhs.addTerm(1, ij.flow_ji);
             }
-            Taxiway ij = (Taxiway)l;
-            
-            // flow_ij is incoming
-            // flow_ji is outgoing
-            for (Map.Entry<Configuration, IloNumVar> entry : ij.dep_flow_ij.entrySet()) {
-                lhs.addTerm(1, entry.getValue());
-            }
-            for (Map.Entry<Configuration, IloNumVar> entry : ij.dep_flow_ji.entrySet()) {
-                lhs.addTerm(-1, entry.getValue());
-            }
-            //lhs.addTerm(1, ij.flow_ij);
-            //lhs.addTerm(-1, ij.flow_ji);
+
+            cplex.addEq(lhs, 0);
         }
-        
-        
-        for(Link l : getOutgoing())
-        {
-            if(!(l instanceof Taxiway))
-            {
-                continue;
-            }
-            Taxiway ij = (Taxiway)l;
-            
-            // flow_ij is outgoing
-            // flow_ji is incoming
-            for (Map.Entry<Configuration, IloNumVar> entry : ij.dep_flow_ij.entrySet()) {
-                lhs.addTerm(-1, entry.getValue());
-            }
-            for (Map.Entry<Configuration, IloNumVar> entry : ij.dep_flow_ji.entrySet()) {
-                lhs.addTerm(1, entry.getValue());
-            }
-            //lhs.addTerm(-1, ij.flow_ij);
-            //lhs.addTerm(1, ij.flow_ji);
-        }
-        
-        cplex.addEq(lhs, 0);
+
     }
     
     protected boolean isRunway;

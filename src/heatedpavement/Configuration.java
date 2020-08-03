@@ -20,4 +20,21 @@ public class Configuration {
         this.name = n;
         this.activeRunways = new ArrayList<>(runways);
     }
+    
+    public String toString()
+    {
+        return name;
+    }
+    
+    public boolean usesRunway(Runway runway)
+    {
+        for(Runway r : activeRunways)
+        {
+            if(r.getName().equals(runway.getName()))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 }
