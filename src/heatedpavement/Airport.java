@@ -561,7 +561,7 @@ public class Airport
 
         
         
-        /*
+        
         for(Configuration c : configurations)
         {
                 
@@ -590,7 +590,6 @@ public class Airport
                             }
                         }
                     }
-
                     cplex.addGe(lhs, total_demand);
    
 
@@ -611,17 +610,15 @@ public class Airport
                     {
                         if(g.getSize() == i)
                         {
-                            lhs.addTerm(1, g.arr_flow_ij.get(c));
+                            lhs.addTerm(1, g.arr_flow_ji.get(c));
                             //lhs.addTerm(1, g.flow_ji);
                         }
                     }
                 }
-
                 cplex.addGe(lhs, total_demand);
-     
             }
         }
-        */
+        
         
 
         double demand = 0;
@@ -1029,6 +1026,12 @@ public class Airport
                 System.out.print(g.name + "\t");
                 for (Map.Entry<Configuration, IloNumVar> entry : g.dep_flow_ij.entrySet()) {
                     System.out.print(cplex.getValue(entry.getValue()) + "\t");
+                }
+                for (Map.Entry<Configuration, IloNumVar> entry : g.dep_flow_ji.entrySet()) {
+                    System.out.print(cplex.getValue(entry.getValue()) + "\t");
+                }
+                for (Map.Entry<Configuration, IloNumVar> entry : g.arr_flow_ij.entrySet()) {
+                    System.out.print(cplex.getValue(entry.getValue())+"\t");
                 }
                 for (Map.Entry<Configuration, IloNumVar> entry : g.arr_flow_ji.entrySet()) {
                     System.out.print(cplex.getValue(entry.getValue())+"\t");

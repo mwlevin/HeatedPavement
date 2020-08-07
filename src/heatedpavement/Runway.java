@@ -242,7 +242,7 @@ public class Runway extends AirportComponent
 
                 if(n == main_arr)
                 {
-                    rhs.addTerm(-1, arriving_flow.get(c));
+                    rhs.addTerm(1, arriving_flow.get(c));
                 }
                 
                 for(Link l : n.getIncoming())

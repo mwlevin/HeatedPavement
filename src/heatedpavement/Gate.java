@@ -30,9 +30,13 @@ public class Gate extends Taxiway
         double capacity = getCapacity()/2;
         
         
+        
         for (Configuration c : Airport.configurations) {
             cplex.addLe(dep_flow_ij.get(c), capacity);
             cplex.addLe(arr_flow_ji.get(c), capacity);
+            
+            cplex.addEq(dep_flow_ji.get(c), 0);
+            cplex.addEq(arr_flow_ij.get(c), 0);
         }
         
     }
