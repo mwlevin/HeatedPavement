@@ -30,7 +30,7 @@ public class Airport
 {
     // enable x_1, x_2, x_3
     public static final boolean enable_x1 = true;
-    public static final boolean enable_x2 = false;
+    public static final boolean enable_x2 = true;
     public static final boolean enable_x3 = false;
     public static final boolean enable_all = false;
     
@@ -417,6 +417,7 @@ public class Airport
         
         
         IloCplex cplex = new IloCplex();
+        cplex.setParam(IloCplex.DoubleParam.TiLim, 600);
 
         for(AirportComponent c : components)
         {
@@ -972,10 +973,11 @@ public class Airport
         System.out.println("TEC: " + TEC);*/
         
         System.out.println("obj: " + cplex.getValue(obj));
+        System.out.println("objValue: " + cplex.getObjValue());
         System.out.println("demand: " + demand);
         
         //Print y and x values for links.
-        System.out.println();
+        /*System.out.println();
         for (Map.Entry<String, Link> entry : lookupLink.entrySet()) {
             
             
@@ -990,10 +992,10 @@ public class Airport
                         + "\ty2_ji: " + (int)Math.round(cplex.getValue(l.y2_ji)) +"\tx2: " + (int)Math.round(cplex.getValue(l.x_2)));
                 
             }
-        }
+        }*/
         
         //print taxiway flow information.
-        System.out.println();
+        /*System.out.println();
         System.out.println("taxiway\tdep flow_ij\tarr flow_ij\tx1\tx2\tx3\ty1\ty2");
         for (Taxiway t : taxiways) {
             if(t.value_x1+t.value_x2+t.value_x3 > 0)
@@ -1011,13 +1013,13 @@ public class Airport
                 }
                 System.out.println(t.value_x1+"\t"+t.value_x2+"\t"+t.value_x3+"\t"+t.value_y1+"\t"+t.value_y2);
             }
-        }
+        }*/
         
 
  
         
         //print gate flow information
-        System.out.println();
+        /*System.out.println();
         System.out.println("gate\tdep flow\tarr flow\tx_1\tx_2\tx_3");
         for (Gate g : gates) {
             
@@ -1039,7 +1041,7 @@ public class Airport
                 System.out.println(g.value_x1+"\t"+g.value_x2+"\t"+g.value_x3);
             }
             
-        }
+        }*/
 
         /*System.out.println("Gates\tx\ty_ij\ty_ji\tflow_in\tflow_out");
         for(Gate g : gates)
@@ -1067,7 +1069,7 @@ public class Airport
         }*/
 
         //print Configurations
-        for (Configuration c : configurations) {
+        /*for (Configuration c : configurations) {
             System.out.println();
             System.out.println("Configuration " + c.name);
             System.out.println("runway\tx\tdeparting\tarriving");
@@ -1080,6 +1082,6 @@ public class Airport
                     }
                 }
             } 
-        }
+        }*/
     }
 }

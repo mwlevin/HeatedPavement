@@ -59,12 +59,12 @@ public class MapViewer extends JMapViewer
 {
     public static void main(String[] args) throws Exception
     {
-        Airport airport = new Airport("MSP_temp"); //change this to change the airport
+        Airport airport = new Airport("MSP"); //change this to change the airport
         airport.solveCplex();
         
         
         JFrame frame = new JFrame();
-        frame.add(new MapViewer(airport, 500, 500));
+        frame.add(new MapViewer(airport, 750, 750));
         frame.pack();
         frame.setVisible(true);
     }
@@ -82,7 +82,7 @@ public class MapViewer extends JMapViewer
         
         setFont(new Font("Arial", Font.BOLD, 14));
         
-        Coordinate startDisplay = new Coordinate(44.8830, -93.2230);
+        Coordinate startDisplay = new Coordinate(44.8830, -93.2200);
         setDisplayPosition(startDisplay, 14);
     } 
     
@@ -134,8 +134,8 @@ public class MapViewer extends JMapViewer
         Graphics2D g = (Graphics2D)window;
         super.paintComponent(g);
         
-        boolean colorcodeY = true; //boolean to see if we should color code based on y or x
-        boolean lookAtY1 = true; //color code based on only y1 values
+        boolean colorcodeY = false; //boolean to see if we should color code based on y or x
+        boolean lookAtY1 = false; //color code based on only y1 values
         boolean lookAtY2 = false; //color code based on only y2 values
         boolean lookAtBoth = true; //color code based on sum y1+y2.
                                     //If this is true, lookAtY1 and lookAtY2 should be false
@@ -180,7 +180,7 @@ public class MapViewer extends JMapViewer
         //drawing gates
         Scanner in = null;
         try {
-           in = new Scanner(new File("airports/MSP_temp/gate_coordinates.txt")); 
+           in = new Scanner(new File("airports/MSP/gate_coordinates.txt")); 
         }
         catch (Exception e) {
             System.out.println("exception caught");
@@ -209,10 +209,10 @@ public class MapViewer extends JMapViewer
                             if (lookAtY1) {
                                 g.setColor(yColor(gates.value_y1));
                             }
-                            if (lookAtY2) {
+                            else if (lookAtY2) {
                                 g.setColor(yColor(gates.value_y2));
                             }
-                            if (lookAtBoth) {
+                            else if (lookAtBoth) {
                                 g.setColor(yColor(gates.value_yBoth));
                             }
                         }
@@ -220,17 +220,17 @@ public class MapViewer extends JMapViewer
                             if (gates.value_y1 > 0) {
                                 g.setColor(Color.red);
                             }
-                            if (gates.value_y2 > 0) {
+                            else if (gates.value_y2 > 0) {
                                 g.setColor(Color.green);
                             }
-                            if (gates.value_x3 > 0) {
+                            else if (gates.value_x3 > 0) {
                                 g.setColor(Color.blue);
                             }
                         }
                         break;
                     }
                 }
-            g.drawOval(gate.x, gate.y, 2, 2);
+                g.drawOval(gate.x, gate.y, 2, 2);
             }
         }
         
