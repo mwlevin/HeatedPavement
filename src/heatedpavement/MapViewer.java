@@ -59,7 +59,7 @@ public class MapViewer extends JMapViewer
 {
     public static void main(String[] args) throws Exception
     {
-        Airport airport = new Airport("MSP"); //change this to change the airport
+        Airport airport = new Airport("MSP_temp"); //change this to change the airport
         airport.solveCplex();
         
         
@@ -134,7 +134,7 @@ public class MapViewer extends JMapViewer
         Graphics2D g = (Graphics2D)window;
         super.paintComponent(g);
         
-        boolean colorcodeY = false; //boolean to see if we should color code based on y or x
+        boolean colorcodeY = true; //boolean to see if we should color code based on y or x
         boolean lookAtY1 = false; //color code based on only y1 values
         boolean lookAtY2 = false; //color code based on only y2 values
         boolean lookAtBoth = true; //color code based on sum y1+y2.
@@ -180,7 +180,7 @@ public class MapViewer extends JMapViewer
         //drawing gates
         Scanner in = null;
         try {
-           in = new Scanner(new File("airports/MSP/gate_coordinates.txt")); 
+           in = new Scanner(new File("airports/MSP_temp/gate_coordinates.txt")); 
         }
         catch (Exception e) {
             System.out.println("exception caught");

@@ -959,19 +959,20 @@ public class Airport
         System.out.println("Method 3 runway cost: " + cplex.getValue(CR_Total3));
         System.out.println("Method 3 gate cost: " + cplex.getValue(CG_Total3));
         System.out.println();
-        /*System.out.println("Runway area for current method: " + cplex.getValue(AR3));
+        System.out.println("Runway area for current method: " + cplex.getValue(AR3));
         System.out.println("Gate area for current method: " + cplex.getValue(AG3));
         System.out.println();
         System.out.println("ATR: " + ATR);
         System.out.println("A: " + A);
         System.out.println("ER_Req: " + cplex.getValue(ER_Req2));
         System.out.println("PR_Req: " + cplex.getValue(PR_Req3));
-        System.out.println("CRP: " + cplex.getValue(CRP3));
-        System.out.println("CRE: " + cplex.getValue(CRE3));
-        System.out.println("CRD: " + cplex.getValue(CRHP3));
-        System.out.println("CREE: " + cplex.getValue(CREE3));
-        System.out.println("TEC: " + TEC);*/
+        System.out.println("CRP: " + (double)(cplex.getValue(CRP3) + cplex.getValue(CGP3)));
+        System.out.println("CRE: " + (double)(cplex.getValue(CRE3) + cplex.getValue(CGE3)));
+        System.out.println("CRD: " + (double)(cplex.getValue(CRHP3) + cplex.getValue(CGHP3)));
+        System.out.println("CREE: " + (double)(cplex.getValue(CREE3) + cplex.getValue(CGEE3)));
+        System.out.println("TEC: " + TEC);
         
+        System.out.println();
         System.out.println("obj: " + cplex.getValue(obj));
         System.out.println("objValue: " + cplex.getObjValue());
         System.out.println("demand: " + demand);
